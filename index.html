@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>The News Bruh - Neon Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
@@ -19,11 +19,16 @@
 
         body { 
             background: var(--bg); color: var(--neon); font-family: var(--mono); 
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column; 
+            /* Use dvh (dynamic viewport height) for better mobile browser support */
+            height: 100dvh; 
+            overflow: hidden;
             text-shadow: 0 0 5px var(--neon-dim);
             border: 6px solid var(--neon);
             box-shadow: inset 0 0 20px var(--neon), 0 0 20px var(--neon-dim);
             border-radius: 4px;
+            /* Prevents content from hiding behind mobile safe areas */
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         #save-status {
@@ -43,8 +48,8 @@
         .stat-item { display: flex; justify-content: space-between; padding: 0 10px; }
 
         #clicker-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; }
-        #emoji-stack { position: relative; width: 180px; height: 180px; }
-        .paper-emoji { position: absolute; font-size: 90px; display: none; filter: drop-shadow(0 0 8px var(--neon)); transition: all 0.3s ease; }
+        #emoji-stack { position: relative; width: 150px; height: 150px; }
+        .paper-emoji { position: absolute; font-size: 70px; display: none; filter: drop-shadow(0 0 8px var(--neon)); transition: all 0.3s ease; }
         #p1 { top: 0; left: 0; transform: rotate(-5deg); }
         #p2 { top: 5px; left: 25px; transform: rotate(10deg); }
         #p3 { top: 10px; left: 50px; transform: rotate(-8deg); }
@@ -55,7 +60,7 @@
         #p8 { top: 60px; left: 30px; transform: rotate(-3deg); }
         #p9 { top: 70px; left: 50px; transform: rotate(20deg); }
 
-        .boost-control { margin-top: 60px; z-index: 100; text-align: center; }
+        .boost-control { margin-top: 40px; z-index: 100; text-align: center; }
         .btn-boost { background: var(--neon); color: #000; border: none; padding: 12px 24px; font-family: var(--mono); font-weight: bold; cursor: pointer; box-shadow: 0 0 15px var(--neon); }
         .btn-boost:disabled { background: #000; color: var(--neon-dim); box-shadow: none; cursor: not-allowed; border: 1px solid var(--neon-dim); }
         #boost-timer-display { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
@@ -70,7 +75,17 @@
         #tab-title { text-transform: capitalize; font-family: var(--old-english); border-bottom: 1px solid var(--neon); margin-bottom: 15px; font-size: 1.8rem; }
         .active-tab { display: block !important; }
 
-        #chat-container { display: flex; flex-direction: column; height: 250px; border-top: 2px solid var(--neon); background: #000; z-index: 50; }
+        /* --- REDESIGNED BOTTOM SECTION --- */
+        #chat-container { 
+            display: flex; 
+            flex-direction: column; 
+            height: 220px; /* Slightly shorter to fit better */
+            border-top: 2px solid var(--neon); 
+            background: #000; 
+            z-index: 50;
+            margin-bottom: 5px; /* Lift it off the bottom slightly */
+        }
+        
         .chat-toggle { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: rgba(57, 255, 20, 0.05); cursor: pointer; border-bottom: 1px solid var(--neon-dim); font-size: 0.7rem; }
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 10px 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; }
         .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; }
@@ -81,9 +96,9 @@
         #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; font-family: var(--mono); font-size: 0.8rem; outline: none; }
         #chat-send { background: var(--neon); color: #000; border: none; padding: 0 15px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
 
-        .command-hints { font-size: 0.7rem; margin-bottom: 8px; color: var(--neon); opacity: 0.8; padding: 5px 15px; background: rgba(57, 255, 20, 0.05); }
-        #command-input { width: calc(100% - 30px); background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: var(--mono); outline: none; margin: 0 15px 15px 15px; }
-        #close-hint { color: var(--neon); font-size: 0.65rem; margin-bottom: 5px; visibility: hidden; text-align: center;}
+        .command-hints { font-size: 0.6rem; margin-bottom: 4px; color: var(--neon); opacity: 0.8; padding: 4px 15px; background: rgba(57, 255, 20, 0.05); }
+        #command-input { width: calc(100% - 30px); background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; font-family: var(--mono); outline: none; margin: 0 15px 10px 15px; }
+        #close-hint { color: var(--neon); font-size: 0.6rem; margin-bottom: 2px; visibility: hidden; text-align: center;}
 
         .upgrade-item { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--neon); margin-bottom: 8px; cursor: pointer; }
         .btn-action { background: var(--neon); color: #000; border: none; padding: 10px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px;}
@@ -180,7 +195,6 @@
 
     let chat = { messages: [], unreadCount: 0, isOpen: true };
 
-    // --- CLOUD FUNCTIONS ---
     async function saveCloud() {
         const { error } = await sb.from('saves').upsert({ 
             user_uuid: playerUUID, 
@@ -203,7 +217,6 @@
         }
     }
 
-    // --- GAME LOGIC ---
     function getMultiplier() { return (1 + game.bruh) * (1 + (game.level * 0.05)) * (game.boostActive ? 5 : 1) * game.premiumMult; }
 
     function updateUI() {
@@ -239,7 +252,6 @@
         while (game.exp >= game.nextExp) { game.exp -= game.nextExp; game.level++; game.nextExp = Math.floor(game.nextExp * 1.5); }
     }
 
-    // --- INTERACTION ---
     document.getElementById('clicker-area').onmousedown = (e) => {
         if(e.target.id === 'boost-btn') return;
         if (!game.boostActive && game.clickCount < 90) game.clickCount += 2;
@@ -255,7 +267,6 @@
 
     function activateBoost(e) { e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; }
 
-    // --- TABS & COMMANDS ---
     document.getElementById('command-input').onkeypress = (e) => {
         if (e.key === 'Enter') {
             let cmd = e.target.value.toLowerCase().trim(); e.target.value = '';
@@ -302,7 +313,6 @@
         }
     }
 
-    // --- CHAT ---
     function toggleChat() { chat.isOpen = !chat.isOpen; document.getElementById('chat-log').style.display = chat.isOpen ? 'flex' : 'none'; chat.unreadCount = 0; updateUI(); }
     function addChatMessage(s, m) {
         chat.messages.push({ s, m, t: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
@@ -314,7 +324,6 @@
     }
     function sendChatMessage() { let i = document.getElementById('chat-input'); if(i.value){ addChatMessage(game.playerName, i.value); i.value = ''; }}
 
-    // --- LOOPS ---
     setInterval(() => {
         let m = getMultiplier();
         let gain = (game.autoNew / 10) * m;
