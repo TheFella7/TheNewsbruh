@@ -59,6 +59,7 @@
 
         #header { border-bottom: 2px solid var(--neon); padding: 10px; text-align: center; background: rgba(0,0,0,0.9); z-index: 10; position: relative; }
         .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .global-msg-count { font-size: 0.55rem; color: var(--neon); border: 1px solid var(--neon-dim); padding: 2px 5px; background: rgba(57, 255, 20, 0.05); }
         .chat-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.6rem; color: var(--neon); cursor: pointer; padding: 5px; }
         .chat-badge { background: var(--neon); color: #000; border-radius: 10px; padding: 2px 6px; font-weight: bold; font-size: 0.5rem; min-width: 16px; text-align: center; box-shadow: 0 0 5px var(--neon); }
         .chat-badge.hidden { display: none; }
@@ -116,7 +117,7 @@
         .upgrade-info { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 10px; }
         .upgrade-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn-upgrade { background: var(--neon); color: #000; border: none; padding: 8px; font-family: var(--mono); font-weight: bold; cursor: pointer; font-size: 0.7rem; }
-        .btn-upgrade:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn-upgrade:disabled { opacity: 0.3; cursor: not-allowed; border: 1px solid var(--neon-dim); background: #000; color: var(--neon-dim); }
         
         .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
         .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
@@ -129,7 +130,7 @@
     <div id="how-to-play-box">
         <div id="close-htp" onclick="document.getElementById('how-to-play-overlay').style.display='none'">X</div>
         <div class="htp-header">The News Bruh</div>
-        <div class="htp-sub">SYSTEM VERSION 2.0 // BRUH_OS</div>
+        <div class="htp-sub">SYSTEM VERSION 2.1 // NEON_OS</div>
         <div class="htp-content">
             <div class="htp-section-title">BASICS</div>
             <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
@@ -152,10 +153,10 @@
 
 <div id="header">
     <div class="header-top-row">
+        <div class="global-msg-count">MSG SENT: <span id="msg-total-val">0</span></div>
         <div class="chat-indicator" onclick="toggleChat()">
             ✉️ <span class="chat-badge hidden" id="unread-count">0</span>
         </div>
-        <div id="live-time" style="font-size: 0.6rem;"></div>
     </div>
     <div class="network-stats">Online: <span id="online-count">1</span> | Total: <span id="total-players">...</span></div>
     <h1>The News Bruh</h1>
@@ -195,7 +196,7 @@
 </div>
 
 <div id="chat-container">
-    <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT / TERMINAL</span><span id="chat-toggle-icon">▼</span></div>
+    <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT (24H LOG)</span><span id="chat-toggle-icon">▼</span></div>
     <div id="chat-log"></div>
     <div class="chat-input-area">
         <div class="command-hints">TYPE !upgrades !rank !stats !stake !prestige !close</div>
@@ -237,10 +238,7 @@
         let exp = Math.floor(Math.log10(num) / 3);
         if (exp <= 4) return (num / Math.pow(10, exp * 3)).toFixed(2) + suffixes[exp - 1];
         let alphaExp = exp - 5;
-        let suffix = "";
-        let count = Math.floor(alphaExp / 26) + 1;
-        let char = String.fromCharCode(97 + (alphaExp % 26));
-        suffix = char.repeat(count);
+        let suffix = String.fromCharCode(97 + (alphaExp % 26)).repeat(Math.floor(alphaExp / 26) + 1);
         return (num / Math.pow(10, exp * 3)).toFixed(2) + suffix;
     }
 
@@ -249,6 +247,7 @@
         .on('broadcast', { event: 'chat' }, (payload) => {
             const isSelf = payload.payload.uid === playerUUID;
             addChatMessage(payload.payload.user, payload.payload.msg, false, isSelf, payload.payload.time);
+            updateGlobalMsgCount();
         })
         .on('presence', { event: 'sync' }, () => {
             const state = globalChannel.presenceState();
@@ -258,17 +257,24 @@
             if (status === 'SUBSCRIBED') { 
                 await globalChannel.track({ online_at: new Date().toISOString() }); 
                 loadPersistentChat();
+                updateGlobalMsgCount();
             }
         });
 
     async function loadPersistentChat() {
-        const { data } = await sb.from('chat_history').select('*').order('created_at', { ascending: false }).limit(30);
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data } = await sb.from('chat_history').select('*').gt('created_at', yesterday).order('created_at', { ascending: true });
         if (data) {
-            chat.messages = data.reverse().map(d => ({
+            chat.messages = data.map(d => ({
                 s: d.sender, m: d.message, sys: false, time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
             }));
             renderChat();
         }
+    }
+
+    async function updateGlobalMsgCount() {
+        const { count } = await sb.from('chat_history').select('*', { count: 'exact', head: true });
+        document.getElementById('msg-total-val').innerText = format(count || 0);
     }
 
     async function saveCloud() {
@@ -370,6 +376,7 @@
             globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time: timeStr } });
             await sb.from('chat_history').insert({ sender: game.playerName, message: val });
             addChatMessage(game.playerName, val, false, true, timeStr);
+            updateGlobalMsgCount();
         }
         input.value = '';
     }
@@ -384,12 +391,10 @@
         let c = getUpgradeNextCost(u);
         if (b < c) return;
         
-        // Solve for n in geometric sum: Balance = NextCost * (1 - r^n) / (1 - r)
         let n = Math.floor(Math.log(1 - (b * (1 - r) / c)) / Math.log(r));
         if (n <= 0) n = 1;
 
         let totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
-        // Safety check
         while (totalCost > b && n > 0) {
             n--;
             totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
@@ -410,6 +415,7 @@
             div.innerHTML = '';
             game.upgrades.forEach(u => {
                 let cost = getUpgradeNextCost(u);
+                let canAfford = game.new >= cost;
                 let row = document.createElement('div');
                 row.className = 'upgrade-row';
                 row.innerHTML = `
@@ -418,8 +424,8 @@
                         <span>+${format(u.power)}/s</span>
                     </div>
                     <div class="upgrade-btns">
-                        <button class="btn-upgrade" ${game.new < cost ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button>
-                        <button class="btn-upgrade" ${game.new < cost ? 'disabled' : ''} onclick="buyMaxUpgrades(game.upgrades[${u.id}])">BUY MAX</button>
+                        <button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button>
+                        <button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyMaxUpgrades(game.upgrades[${u.id}])">BUY MAX</button>
                     </div>
                 `;
                 div.appendChild(row);
@@ -483,7 +489,7 @@
 
     function addChatMessage(s, m, isSystem, isSelf, time) {
         chat.messages.push({ s, m, sys: isSystem, time: time || "00:00" });
-        if (chat.messages.length > 50) chat.messages.shift();
+        if (chat.messages.length > 100) chat.messages.shift();
         renderChat();
         if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
     }
@@ -528,7 +534,9 @@
             if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
         } else if (game.clickCount > 0) { game.clickCount -= 0.2; }
         if (game.boostCooldown > 0) game.boostCooldown -= 0.1;
+        
         updateUI();
+        if (chat.currentTab === '!upgrades') renderTab('!upgrades'); // Auto-enable buttons
         document.getElementById('live-time').innerText = new Date().toUTCString();
     }, 100);
 
