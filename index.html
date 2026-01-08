@@ -66,28 +66,18 @@
         .floating-text { position: absolute; color: var(--neon); font-weight: bold; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 101; white-space: nowrap; }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
 
-        .falling-paper { position: absolute; top: -50px; font-size: 24px; pointer-events: none; animation: fall linear forwards; z-index: 1; opacity: 0.6; }
-        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
-
         #tab-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: none; border: 2px solid var(--neon); margin: 15px; background: rgba(0,0,0,0.95); z-index: 20; }
-        #tab-title { text-transform: capitalize; font-family: var(--old-english); border-bottom: 1px solid var(--neon); margin-bottom: 15px; font-size: 1.8rem; }
+        #tab-title { text-transform: capitalize; font-family: var(--old-english); border-bottom: 1px solid var(--neon); margin-bottom: 15px; font-size: 1.5rem; }
         .active-tab { display: block !important; }
 
         #chat-container { 
-            display: flex; 
-            flex-direction: column; 
-            height: 280px; 
-            border-top: 2px solid var(--neon); 
-            background: #000; 
-            z-index: 50;
+            display: flex; flex-direction: column; height: 280px; 
+            border-top: 2px solid var(--neon); background: #000; z-index: 50;
         }
         
         .chat-toggle { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: rgba(57, 255, 20, 0.1); cursor: pointer; border-bottom: 1px solid var(--neon-dim); font-size: 0.7rem; font-weight: bold; }
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 10px 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; }
         .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; }
-        .chat-timestamp { font-size: 0.55rem; color: var(--neon-dim); margin-right: 8px; }
-        .chat-username { color: var(--neon); font-weight: bold; }
-        .chat-content { word-break: break-word; margin-top: 2px; }
         
         .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
         .command-hints { font-size: 0.55rem; margin-bottom: 5px; color: var(--neon); opacity: 0.7; text-align: center; }
@@ -96,10 +86,11 @@
         #chat-send { background: var(--neon); color: #000; border: none; padding: 0 20px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
 
         .upgrade-item { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--neon); margin-bottom: 8px; cursor: pointer; }
-        .btn-action { background: var(--neon); color: #000; border: none; padding: 10px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px;}
-        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 10px; }
-        .rank-table th { text-align: left; border-bottom: 1px solid var(--neon); padding: 5px; color: var(--neon); opacity: 0.6; }
-        .rank-table td { padding: 8px 5px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
+        .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
+        
+        /* Investment Tab Styles */
+        .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
+        .invest-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
     </style>
 </head>
 <body>
@@ -154,7 +145,7 @@
     <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT / TERMINAL</span><span id="chat-toggle-icon">▼</span></div>
     <div id="chat-log"></div>
     <div class="chat-input-area">
-        <div class="command-hints">Type !upgrades !rank !stats !prestige or !close</div>
+        <div class="command-hints">Type !upgrades !rank !stats !invest or !close</div>
         <div class="chat-input-container">
             <input type="text" id="chat-input" placeholder="Type message or !command..." maxlength="100">
             <button id="chat-send" onclick="handleInput()">EXEC</button>
@@ -163,7 +154,6 @@
 </div>
 
 <script>
-    // --- SUPABASE SETUP ---
     const _URL = 'https://wbdsmleccsxglvsgsqnw.supabase.co';
     const _KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndiZHNtbGVjY3N4Z2x2c2dzcW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5MDMxNDIsImV4cCI6MjA4MzQ3OTE0Mn0.7IEkpvEDEvKAF2C3Lv6qU9omg6L7x-eVLyASxpyRXuk';
     const sb = supabase.createClient(_URL, _KEY);
@@ -176,7 +166,8 @@
         level: 1, exp: 0, nextExp: 100, totalExp: 0,
         clickPower: 1, autoNew: 0, clickCount: 0,
         boostActive: false, boostCooldown: 0, boostTimeLeft: 0,
-        premiumMult: 1, stakedNews: 0, unclaimedNews: 0,
+        premiumMult: 1, 
+        stakedNews: 0, unclaimedNews: 0, // Investment stats
         upgrades: [
             { id: 0, name: "Neon Paperboy", baseCost: 15, count: 0, power: 1 },
             { id: 1, name: "Laser Press", baseCost: 150, count: 0, power: 12 },
@@ -188,25 +179,14 @@
     let chat = { messages: [], unreadCount: 0, isOpen: true };
 
     async function saveCloud() {
-        const { error } = await sb.from('saves').upsert({ 
-            user_uuid: playerUUID, 
-            game_data: game,
-            updated_at: new Date()
-        }, { onConflict: 'user_uuid' });
-        
-        if (!error) {
-            const el = document.getElementById('save-status');
-            el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 2000);
-        }
+        await sb.from('saves').upsert({ user_uuid: playerUUID, game_data: game, updated_at: new Date() }, { onConflict: 'user_uuid' });
+        const el = document.getElementById('save-status');
+        el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 2000);
     }
 
     async function loadCloud() {
         const { data } = await sb.from('saves').select('game_data').eq('user_uuid', playerUUID).single();
-        if (data) {
-            Object.assign(game, data.game_data);
-            updateUI();
-            addChatMessage("System", "Cloud save restored.");
-        }
+        if (data) { Object.assign(game, data.game_data); updateUI(); addChatMessage("System", "Cloud save restored."); }
     }
 
     function getMultiplier() { return (1 + game.bruh) * (1 + (game.level * 0.05)) * (game.boostActive ? 5 : 1) * game.premiumMult; }
@@ -227,16 +207,20 @@
 
         const btn = document.getElementById('boost-btn');
         const tmr = document.getElementById('boost-timer-display');
-        if (game.boostActive) {
-            btn.style.display = 'none'; tmr.style.display = 'block';
-            tmr.innerText = `Boost: ${game.boostTimeLeft.toFixed(1)}s`;
-        } else {
+        if (game.boostActive) { btn.style.display = 'none'; tmr.style.display = 'block'; tmr.innerText = `Boost: ${game.boostTimeLeft.toFixed(1)}s`; }
+        else {
             btn.style.display = 'inline-block'; tmr.style.display = 'none';
             if (game.boostCooldown > 0) { btn.disabled = true; btn.innerText = `Cool: ${Math.ceil(game.boostCooldown)}s`; }
             else if (game.clickCount < 90) { btn.disabled = true; btn.innerText = `Stack: ${Math.floor((game.clickCount/90)*100)}%`; }
             else { btn.disabled = false; btn.innerText = `ACTIVATE 5x`; }
         }
         document.getElementById('online-count').innerText = (450 + Math.floor(Math.random() * 50)).toLocaleString();
+        
+        // Refresh Tab if open
+        if(document.getElementById('tab-container').classList.contains('active-tab')) {
+            const currentTab = document.getElementById('tab-title').innerText.toLowerCase();
+            if(currentTab.includes("earn")) renderTab("!invest");
+        }
     }
 
     function addExp(amount) {
@@ -250,51 +234,47 @@
         if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
         let gain = game.clickPower * getMultiplier();
         game.new += gain; addExp(1);
-        
-        const f = document.createElement('div');
-        f.className = 'floating-text'; f.innerText = `+${Math.floor(gain)}`;
+        const f = document.createElement('div'); f.className = 'floating-text'; f.innerText = `+${Math.floor(gain)}`;
         f.style.left = e.clientX + 'px'; f.style.top = e.clientY + 'px';
         document.body.appendChild(f); setTimeout(() => f.remove(), 800);
     };
 
     function activateBoost(e) { e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; }
 
-    // --- UNIFIED INPUT HANDLER ---
     function handleInput() {
         const input = document.getElementById('chat-input');
-        let val = input.value.trim();
-        if(!val) return;
-
+        let val = input.value.trim(); if(!val) return;
         if (val.startsWith('!')) {
-            // Process as Command
             let cmd = val.toLowerCase();
             const container = document.getElementById('tab-container');
             const clicker = document.getElementById('clicker-area');
-
-            if (cmd === '!close') {
-                container.classList.remove('active-tab');
-                clicker.style.display = 'flex';
-            } else if (['!upgrades', '!stake', '!prestige', '!stats', '!rank'].includes(cmd)) {
-                container.classList.add('active-tab');
-                clicker.style.display = 'none';
-                document.getElementById('tab-title').innerText = cmd.substring(1);
-                renderTab(cmd);
-            } else {
-                addChatMessage("System", "Unknown command.");
+            if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; }
+            else if (['!upgrades', '!invest', '!stake', '!stats', '!rank'].includes(cmd)) {
+                container.classList.add('active-tab'); clicker.style.display = 'none';
+                document.getElementById('tab-title').innerText = (cmd === '!invest' || cmd === '!stake') ? "Invest & Earn More" : cmd.substring(1);
+                renderTab(cmd === '!stake' ? '!invest' : cmd);
             }
-        } else {
-            // Process as Chat
-            addChatMessage(game.playerName, val);
-        }
+        } else { addChatMessage(game.playerName, val); }
         input.value = '';
     }
-
     document.getElementById('chat-input').onkeypress = (e) => { if (e.key === 'Enter') handleInput(); };
 
     function renderTab(cmd) {
         const div = document.getElementById('tab-content');
-        div.innerHTML = '';
-        if (cmd === '!upgrades') {
+        if (cmd === '!invest') {
+            div.innerHTML = `
+                <div class="invest-stat">
+                    <p>Total Invested: <b>${Math.floor(game.stakedNews).toLocaleString()}</b> News</p>
+                    <p>Current Yield: <b>${game.unclaimedNews.toFixed(8)}</b> News</p>
+                    <p style="font-size:0.6rem; color:var(--neon-dim); margin-top:5px;">Rate: 0.0000000001 per News/sec</p>
+                </div>
+                <div class="invest-grid">
+                    <button class="btn-action" onclick="investAll()">INVEST ALL</button>
+                    <button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button>
+                    <button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM YIELD</button>
+                </div>`;
+        } else if (cmd === '!upgrades') {
+            div.innerHTML = '';
             game.upgrades.forEach(u => {
                 let cost = Math.floor(u.baseCost * Math.pow(1.15, u.count));
                 let item = document.createElement('div');
@@ -304,64 +284,53 @@
                 div.appendChild(item);
             });
         } else if (cmd === '!stats') {
-            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)">
-                <p>Passive: ${game.autoNew.toFixed(1)}/s</p>
-                <p>Total Exp: ${Math.floor(game.totalExp)}</p>
-                <input id="name-in" value="${game.playerName}" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:5px; margin-top:10px; width:100%">
-                <button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">SAVE NAME</button>
-            </div>`;
+            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><p>Passive: ${game.autoNew.toFixed(1)}/s</p><input id="name-in" value="${game.playerName}" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:5px; margin-top:10px; width:100%"><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">SAVE NAME</button></div>`;
         } else if (cmd === '!rank') {
             div.innerHTML = 'Loading Leaderboard...';
             sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(5).then(({data}) => {
-                let html = '<table class="rank-table"><tr><th>Name</th><th>Level</th><th>Exp</th></tr>';
-                data.forEach(d => {
-                    html += `<tr><td>${d.game_data.playerName}</td><td>${d.game_data.level}</td><td>${Math.floor(d.game_data.totalExp).toLocaleString()}</td></tr>`;
-                });
+                let html = '<table style="width:100%; font-size:0.7rem;"><tr><th>Name</th><th>Level</th></tr>';
+                data.forEach(d => { html += `<tr><td>${d.game_data.playerName}</td><td>${d.game_data.level}</td></tr>`; });
                 div.innerHTML = html + '</table>';
             });
         }
     }
 
+    // Investment Logic Functions
+    function investAll() { game.stakedNews += game.new; game.new = 0; renderTab('!invest'); }
+    function unstakeAll() { game.new += game.stakedNews; game.stakedNews = 0; renderTab('!invest'); }
+    function claimYield() { game.new += game.unclaimedNews; game.unclaimedNews = 0; renderTab('!invest'); }
+
     function toggleChat() { 
         chat.isOpen = !chat.isOpen; 
-        const log = document.getElementById('chat-log');
-        const inputArea = document.querySelector('.chat-input-area');
-        const container = document.getElementById('chat-container');
-        
-        if (chat.isOpen) {
-            log.style.display = 'flex';
-            inputArea.style.display = 'block';
-            container.style.height = '280px';
-        } else {
-            log.style.display = 'none';
-            inputArea.style.display = 'none';
-            container.style.height = '40px';
-        }
-        chat.unreadCount = 0; 
-        updateUI(); 
+        document.getElementById('chat-log').style.display = chat.isOpen ? 'flex' : 'none';
+        document.querySelector('.chat-input-area').style.display = chat.isOpen ? 'block' : 'none';
+        document.getElementById('chat-container').style.height = chat.isOpen ? '280px' : '40px';
+        chat.unreadCount = 0; updateUI(); 
     }
 
     function addChatMessage(s, m) {
         chat.messages.push({ s, m, t: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
         if (chat.messages.length > 20) chat.messages.shift();
         const log = document.getElementById('chat-log');
-        log.innerHTML = chat.messages.map(msg => `<div class="chat-message"><span class="chat-timestamp">${msg.t}</span><b>${msg.s}:</b> ${msg.m}</div>`).join('');
+        log.innerHTML = chat.messages.map(msg => `<div class="chat-message"><b>${msg.s}:</b> ${msg.m}</div>`).join('');
         log.scrollTop = log.scrollHeight;
         if (!chat.isOpen) chat.unreadCount++;
     }
 
+    // Main Game Loop (100ms)
     setInterval(() => {
         let m = getMultiplier();
         let gain = (game.autoNew / 10) * m;
         game.new += gain; game.totalNew += gain;
+        
+        // Invest Yield Generation: 0.0000000001 per news per sec (divide by 10 for 100ms ticks)
+        if (game.stakedNews > 0) {
+            game.unclaimedNews += (game.stakedNews * 0.0000000001) / 10;
+        }
+
         if (gain > 0) addExp(gain * 0.01);
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
-            if (Math.random() > 0.7) {
-                const p = document.createElement('div'); p.className = 'falling-paper'; p.innerText = '🗞️';
-                p.style.left = Math.random() * 100 + 'vw'; document.body.appendChild(p);
-                setTimeout(() => p.remove(), 3000);
-            }
             if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
         } else if (game.clickCount > 0) game.clickCount -= 0.2;
         if (game.boostCooldown > 0) game.boostCooldown -= 0.1;
