@@ -23,8 +23,9 @@
             height: 100dvh; 
             overflow: hidden;
             text-shadow: 0 0 5px var(--neon-dim);
-            border: 6px solid var(--neon);
-            box-shadow: inset 0 0 20px var(--neon), 0 0 20px var(--neon-dim);
+            /* Thinner Border */
+            border: 2px solid var(--neon);
+            box-shadow: inset 0 0 10px var(--neon-dim);
             border-radius: 4px;
             padding-bottom: env(safe-area-inset-bottom);
         }
@@ -84,6 +85,8 @@
         .upgrade-item { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--neon); margin-bottom: 8px; cursor: pointer; }
         .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
         .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
+        
+        .full-stat-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(57, 255, 20, 0.1); font-size: 0.75rem; }
     </style>
 </head>
 <body>
@@ -157,7 +160,7 @@
     let game = {
         playerName: "Anonymous", new: 0, totalNew: 0, bruh: 0,
         level: 1, exp: 0, nextExp: 100, totalExp: 0,
-        clickPower: 1, autoNew: 0, clickCount: 0,
+        clickPower: 1, autoNew: 0, clickCount: 0, totalClicks: 0,
         boostActive: false, boostCooldown: 0, boostTimeLeft: 0,
         premiumMult: 1, stakedNews: 0, unclaimedNews: 0,
         upgrades: [
@@ -218,12 +221,8 @@
         document.getElementById('stat-total-exp').innerText = Math.floor(game.totalExp).toLocaleString();
         
         const badge = document.getElementById('unread-count');
-        if (chat.unreadCount > 0) {
-            badge.innerText = chat.unreadCount;
-            badge.classList.remove('hidden');
-        } else {
-            badge.classList.add('hidden');
-        }
+        if (chat.unreadCount > 0) { badge.innerText = chat.unreadCount; badge.classList.remove('hidden'); }
+        else { badge.classList.add('hidden'); }
 
         let stack = Math.max(1, Math.min(9, Math.ceil(game.clickCount / 10)));
         if (game.boostActive) stack = Math.max(1, Math.ceil((game.boostTimeLeft / 15) * 9));
@@ -279,7 +278,23 @@
             let cost = getPrestigeCost();
             div.innerHTML = `<div class="invest-stat"><p>Current Multiplier: <b>${(game.bruh+1)}x</b></p><p>Next Bruh Cost: <b>${cost.toLocaleString()}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
         } else if (cmd === '!stats') {
-            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><p>Passive: ${game.autoNew.toFixed(1)}/s</p><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:5px; margin-top:10px; width:100%"><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE NAME</button></div>`;
+            div.innerHTML = `
+                <div style="padding:10px; border:1px solid var(--neon)">
+                    <p style="font-size:0.6rem; opacity:0.7; margin-bottom:5px;">NETWORK IDENTITY</p>
+                    <input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%">
+                    
+                    <p style="font-size:0.6rem; opacity:0.7; margin-bottom:5px;">PERFORMANCE DATA</p>
+                    <div class="full-stat-line"><span>Current Level:</span> <b>${game.level}</b></div>
+                    <div class="full-stat-line"><span>EXP Progress:</span> <b>${Math.floor(game.exp)} / ${game.nextExp}</b></div>
+                    <div class="full-stat-line"><span>Lifetime EXP:</span> <b>${Math.floor(game.totalExp).toLocaleString()}</b></div>
+                    <div class="full-stat-line"><span>Passive Rate:</span> <b>${(game.autoNew * getMultiplier()).toFixed(1)}/s</b></div>
+                    <div class="full-stat-line"><span>Click Power:</span> <b>${getMultiplier().toFixed(1)}/tap</b></div>
+                    <div class="full-stat-line"><span>Total Clicks:</span> <b>${game.totalClicks || 0}</b></div>
+                    <div class="full-stat-line"><span>Staked Assets:</span> <b>${Math.floor(game.stakedNews).toLocaleString()}</b></div>
+                    <div class="full-stat-line"><span>Bruh Multiplier:</span> <b>${game.bruh}x</b></div>
+                    
+                    <button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button>
+                </div>`;
         } else if (cmd === '!rank') {
             div.innerHTML = 'Loading Leaderboard...';
             sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(5).then(({data}) => {
@@ -318,11 +333,7 @@
         const log = document.getElementById('chat-log');
         log.innerHTML = chat.messages.map(msg => `<div class="chat-message" style="${msg.sys ? 'opacity:0.6' : ''}"><b>${msg.s}:</b> ${msg.m}</div>`).join('');
         log.scrollTop = log.scrollHeight;
-        
-        if (!chat.isOpen && !isSelf) {
-            chat.unreadCount++;
-            updateUI();
-        }
+        if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
     }
 
     document.getElementById('clicker-area').onmousedown = (e) => {
@@ -330,12 +341,24 @@
         if (!game.boostActive && game.clickCount < 90) game.clickCount += 2;
         if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
         let gain = 1 * getMultiplier();
-        game.new += gain; game.exp += (gain * 0.01);
-        while (game.exp >= game.nextExp) { game.exp -= game.nextExp; game.level++; game.nextExp = Math.floor(game.nextExp * 1.5); }
+        game.new += gain; game.totalClicks = (game.totalClicks || 0) + 1;
+        
+        // Manual Exp Gain
+        addExp(gain * 0.05);
+
         const f = document.createElement('div'); f.className = 'floating-text'; f.innerText = `+${Math.floor(gain)}`;
         f.style.left = e.clientX + 'px'; f.style.top = e.clientY + 'px';
         document.body.appendChild(f); setTimeout(() => f.remove(), 800);
     };
+
+    function addExp(amount) {
+        game.exp += amount; game.totalExp += amount;
+        while (game.exp >= game.nextExp) {
+            game.exp -= game.nextExp;
+            game.level++;
+            game.nextExp = Math.floor(game.nextExp * 1.5);
+        }
+    }
 
     function activateBoost(e) { e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; }
 
@@ -343,6 +366,10 @@
         let m = getMultiplier();
         let gain = (game.autoNew / 10) * m;
         game.new += gain; game.totalNew += gain;
+        
+        // Auto Upgrades now grant Exp (at a lower rate than clicking)
+        if (gain > 0) addExp(gain * 0.01);
+
         if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.0000000001) / 10;
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
