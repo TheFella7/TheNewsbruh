@@ -88,7 +88,6 @@
         .upgrade-item { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--neon); margin-bottom: 8px; cursor: pointer; }
         .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
         
-        /* Investment Tab Styles */
         .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
         .invest-grid { display: grid; grid-template-columns: 1fr; gap: 5px; }
     </style>
@@ -167,7 +166,7 @@
         clickPower: 1, autoNew: 0, clickCount: 0,
         boostActive: false, boostCooldown: 0, boostTimeLeft: 0,
         premiumMult: 1, 
-        stakedNews: 0, unclaimedNews: 0, // Investment stats
+        stakedNews: 0, unclaimedNews: 0,
         upgrades: [
             { id: 0, name: "Neon Paperboy", baseCost: 15, count: 0, power: 1 },
             { id: 1, name: "Laser Press", baseCost: 150, count: 0, power: 12 },
@@ -216,7 +215,6 @@
         }
         document.getElementById('online-count').innerText = (450 + Math.floor(Math.random() * 50)).toLocaleString();
         
-        // Refresh Tab if open
         if(document.getElementById('tab-container').classList.contains('active-tab')) {
             const currentTab = document.getElementById('tab-title').innerText.toLowerCase();
             if(currentTab.includes("earn")) renderTab("!invest");
@@ -251,7 +249,9 @@
             if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; }
             else if (['!upgrades', '!invest', '!stake', '!stats', '!rank'].includes(cmd)) {
                 container.classList.add('active-tab'); clicker.style.display = 'none';
-                document.getElementById('tab-title').innerText = (cmd === '!invest' || cmd === '!stake') ? "Invest & Earn More" : cmd.substring(1);
+                if (cmd === '!invest' || cmd === '!stake') document.getElementById('tab-title').innerText = "Invest & Earn More";
+                else if (cmd === '!rank') document.getElementById('tab-title').innerText = "Leaderboard";
+                else document.getElementById('tab-title').innerText = cmd.substring(1);
                 renderTab(cmd === '!stake' ? '!invest' : cmd);
             }
         } else { addChatMessage(game.playerName, val); }
@@ -295,7 +295,6 @@
         }
     }
 
-    // Investment Logic Functions
     function investAll() { game.stakedNews += game.new; game.new = 0; renderTab('!invest'); }
     function unstakeAll() { game.new += game.stakedNews; game.stakedNews = 0; renderTab('!invest'); }
     function claimYield() { game.new += game.unclaimedNews; game.unclaimedNews = 0; renderTab('!invest'); }
@@ -317,17 +316,13 @@
         if (!chat.isOpen) chat.unreadCount++;
     }
 
-    // Main Game Loop (100ms)
     setInterval(() => {
         let m = getMultiplier();
         let gain = (game.autoNew / 10) * m;
         game.new += gain; game.totalNew += gain;
-        
-        // Invest Yield Generation: 0.0000000001 per news per sec (divide by 10 for 100ms ticks)
         if (game.stakedNews > 0) {
             game.unclaimedNews += (game.stakedNews * 0.0000000001) / 10;
         }
-
         if (gain > 0) addExp(gain * 0.01);
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
