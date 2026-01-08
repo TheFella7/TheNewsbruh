@@ -20,14 +20,12 @@
         body { 
             background: var(--bg); color: var(--neon); font-family: var(--mono); 
             display: flex; flex-direction: column; 
-            /* Use dvh (dynamic viewport height) for better mobile browser support */
             height: 100dvh; 
             overflow: hidden;
             text-shadow: 0 0 5px var(--neon-dim);
             border: 6px solid var(--neon);
             box-shadow: inset 0 0 20px var(--neon), 0 0 20px var(--neon-dim);
             border-radius: 4px;
-            /* Prevents content from hiding behind mobile safe areas */
             padding-bottom: env(safe-area-inset-bottom);
         }
 
@@ -75,38 +73,33 @@
         #tab-title { text-transform: capitalize; font-family: var(--old-english); border-bottom: 1px solid var(--neon); margin-bottom: 15px; font-size: 1.8rem; }
         .active-tab { display: block !important; }
 
-        /* --- REDESIGNED BOTTOM SECTION --- */
         #chat-container { 
             display: flex; 
             flex-direction: column; 
-            height: 220px; /* Slightly shorter to fit better */
+            height: 280px; 
             border-top: 2px solid var(--neon); 
             background: #000; 
             z-index: 50;
-            margin-bottom: 5px; /* Lift it off the bottom slightly */
         }
         
-        .chat-toggle { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: rgba(57, 255, 20, 0.05); cursor: pointer; border-bottom: 1px solid var(--neon-dim); font-size: 0.7rem; }
+        .chat-toggle { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: rgba(57, 255, 20, 0.1); cursor: pointer; border-bottom: 1px solid var(--neon-dim); font-size: 0.7rem; font-weight: bold; }
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 10px 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; }
         .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; }
         .chat-timestamp { font-size: 0.55rem; color: var(--neon-dim); margin-right: 8px; }
         .chat-username { color: var(--neon); font-weight: bold; }
         .chat-content { word-break: break-word; margin-top: 2px; }
-        .chat-input-container { display: flex; padding: 10px 15px; border-top: 1px solid var(--neon-dim); background: rgba(0,0,0,0.8); }
-        #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; font-family: var(--mono); font-size: 0.8rem; outline: none; }
-        #chat-send { background: var(--neon); color: #000; border: none; padding: 0 15px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
-
-        .command-hints { font-size: 0.6rem; margin-bottom: 4px; color: var(--neon); opacity: 0.8; padding: 4px 15px; background: rgba(57, 255, 20, 0.05); }
-        #command-input { width: calc(100% - 30px); background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; font-family: var(--mono); outline: none; margin: 0 15px 10px 15px; }
-        #close-hint { color: var(--neon); font-size: 0.6rem; margin-bottom: 2px; visibility: hidden; text-align: center;}
+        
+        .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
+        .command-hints { font-size: 0.55rem; margin-bottom: 5px; color: var(--neon); opacity: 0.7; text-align: center; }
+        .chat-input-container { display: flex; }
+        #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: var(--mono); font-size: 0.85rem; outline: none; }
+        #chat-send { background: var(--neon); color: #000; border: none; padding: 0 20px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
 
         .upgrade-item { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--neon); margin-bottom: 8px; cursor: pointer; }
         .btn-action { background: var(--neon); color: #000; border: none; padding: 10px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px;}
-        .stake-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .rank-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 10px; }
         .rank-table th { text-align: left; border-bottom: 1px solid var(--neon); padding: 5px; color: var(--neon); opacity: 0.6; }
         .rank-table td { padding: 8px 5px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
-        .rank-self { background: rgba(57, 255, 20, 0.2); }
     </style>
 </head>
 <body>
@@ -158,17 +151,16 @@
 </div>
 
 <div id="chat-container">
-    <div class="chat-toggle" onclick="toggleChat()"><span>IN-GAME CHAT</span><span id="chat-toggle-icon">▼</span></div>
+    <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT / TERMINAL</span><span id="chat-toggle-icon">▼</span></div>
     <div id="chat-log"></div>
-    <div class="chat-input-container">
-        <input type="text" id="chat-input" placeholder="Type message..." maxlength="100">
-        <button id="chat-send" onclick="sendChatMessage()">SEND</button>
+    <div class="chat-input-area">
+        <div class="command-hints">Type !upgrades !rank !stats !prestige or !close</div>
+        <div class="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type message or !command..." maxlength="100">
+            <button id="chat-send" onclick="handleInput()">EXEC</button>
+        </div>
     </div>
 </div>
-
-<div class="command-hints">!upgrades !stake !prestige !stats !rank !close</div>
-<div id="close-hint">Type "!close" to return to game</div>
-<input type="text" id="command-input" placeholder="Enter command..." autocomplete="off">
 
 <script>
     // --- SUPABASE SETUP ---
@@ -267,20 +259,37 @@
 
     function activateBoost(e) { e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; }
 
-    document.getElementById('command-input').onkeypress = (e) => {
-        if (e.key === 'Enter') {
-            let cmd = e.target.value.toLowerCase().trim(); e.target.value = '';
+    // --- UNIFIED INPUT HANDLER ---
+    function handleInput() {
+        const input = document.getElementById('chat-input');
+        let val = input.value.trim();
+        if(!val) return;
+
+        if (val.startsWith('!')) {
+            // Process as Command
+            let cmd = val.toLowerCase();
             const container = document.getElementById('tab-container');
             const clicker = document.getElementById('clicker-area');
-            if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; document.getElementById('close-hint').style.visibility = 'hidden'; }
-            else if (['!upgrades', '!stake', '!prestige', '!stats', '!rank'].includes(cmd)) {
-                container.classList.add('active-tab'); clicker.style.display = 'none';
+
+            if (cmd === '!close') {
+                container.classList.remove('active-tab');
+                clicker.style.display = 'flex';
+            } else if (['!upgrades', '!stake', '!prestige', '!stats', '!rank'].includes(cmd)) {
+                container.classList.add('active-tab');
+                clicker.style.display = 'none';
                 document.getElementById('tab-title').innerText = cmd.substring(1);
-                document.getElementById('close-hint').style.visibility = 'visible';
                 renderTab(cmd);
+            } else {
+                addChatMessage("System", "Unknown command.");
             }
+        } else {
+            // Process as Chat
+            addChatMessage(game.playerName, val);
         }
-    };
+        input.value = '';
+    }
+
+    document.getElementById('chat-input').onkeypress = (e) => { if (e.key === 'Enter') handleInput(); };
 
     function renderTab(cmd) {
         const div = document.getElementById('tab-content');
@@ -313,7 +322,25 @@
         }
     }
 
-    function toggleChat() { chat.isOpen = !chat.isOpen; document.getElementById('chat-log').style.display = chat.isOpen ? 'flex' : 'none'; chat.unreadCount = 0; updateUI(); }
+    function toggleChat() { 
+        chat.isOpen = !chat.isOpen; 
+        const log = document.getElementById('chat-log');
+        const inputArea = document.querySelector('.chat-input-area');
+        const container = document.getElementById('chat-container');
+        
+        if (chat.isOpen) {
+            log.style.display = 'flex';
+            inputArea.style.display = 'block';
+            container.style.height = '280px';
+        } else {
+            log.style.display = 'none';
+            inputArea.style.display = 'none';
+            container.style.height = '40px';
+        }
+        chat.unreadCount = 0; 
+        updateUI(); 
+    }
+
     function addChatMessage(s, m) {
         chat.messages.push({ s, m, t: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
         if (chat.messages.length > 20) chat.messages.shift();
@@ -322,7 +349,6 @@
         log.scrollTop = log.scrollHeight;
         if (!chat.isOpen) chat.unreadCount++;
     }
-    function sendChatMessage() { let i = document.getElementById('chat-input'); if(i.value){ addChatMessage(game.playerName, i.value); i.value = ''; }}
 
     setInterval(() => {
         let m = getMultiplier();
