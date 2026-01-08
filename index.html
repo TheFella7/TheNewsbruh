@@ -104,7 +104,8 @@
         #chat-container { display: flex; flex-direction: column; height: 280px; border-top: 2px solid var(--neon); background: #000; z-index: 50; }
         .chat-toggle { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: rgba(57, 255, 20, 0.1); cursor: pointer; border-bottom: 1px solid var(--neon-dim); font-size: 0.7rem; font-weight: bold; }
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 10px 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; }
-        .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; }
+        .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; position: relative; }
+        .chat-time { position: absolute; right: 10px; top: 6px; font-size: 0.55rem; opacity: 0.6; }
         .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
         .command-hints { font-size: 0.55rem; margin-bottom: 5px; color: #FFFFFF; font-weight: bold; text-align: center; letter-spacing: 0.5px; }
         .chat-input-container { display: flex; }
@@ -127,15 +128,15 @@
         <div class="htp-content">
             <div class="htp-section-title">BASICS</div>
             <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
-            📈 <b>LEVEL UP</b> by clicking to increase your base multiplier.<br>
-            🔥 <b>BOOST</b> by stacking papers. Activate it for <b>5.0x</b> News and massive EXP.</p>
+            📈 <b>LEVEL UP</b> by clicking to increase multiplier.<br>
+            🔥 <b>BOOST</b> by stacking papers. Activate for <b>5.0x</b> News.</p>
             <div class="htp-section-title">TERMINAL COMMANDS</div>
             <ul class="cmd-list">
                 <li><code>!upgrades</code> - Passive income sources.</li>
                 <li><code>!stake</code> - Earn <b>Live Yield</b> on deposits.</li>
                 <li><code>!prestige</code> - Permanent <b>👑 Bruh</b> multipliers.</li>
-                <li><code>!rank</code> - Global leaderboard access.</li>
-                <li><code>!stats</code> - Lifetime progress tracking.</li>
+                <li><code>!rank</code> - Global leaderboard.</li>
+                <li><code>!stats</code> - Lifetime progress and Alias change.</li>
                 <li><code>!close</code> - Return to stack.</li>
             </ul>
         </div>
@@ -225,14 +226,11 @@
     let chat = { messages: [], unreadCount: 0, isOpen: true, currentTab: null };
     let boostAnimInterval = null;
 
-    // INFINITE SCALING FORMATTER
     function format(num) {
         if (num < 1000) return num.toFixed(1);
         const suffixes = ["k", "m", "b", "t"];
         let exp = Math.floor(Math.log10(num) / 3);
         if (exp <= 4) return (num / Math.pow(10, exp * 3)).toFixed(2) + suffixes[exp - 1];
-        
-        // Alphabetical Scaling: a, b, c... aa, bb, cc...
         let alphaExp = exp - 5;
         let suffix = "";
         let count = Math.floor(alphaExp / 26) + 1;
@@ -245,15 +243,28 @@
     globalChannel
         .on('broadcast', { event: 'chat' }, (payload) => {
             const isSelf = payload.payload.uid === playerUUID;
-            addChatMessage(payload.payload.user, payload.payload.msg, false, isSelf);
+            addChatMessage(payload.payload.user, payload.payload.msg, false, isSelf, payload.payload.time);
         })
         .on('presence', { event: 'sync' }, () => {
             const state = globalChannel.presenceState();
             document.getElementById('online-count').innerText = Object.keys(state).length;
         })
         .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') { await globalChannel.track({ online_at: new Date().toISOString() }); }
+            if (status === 'SUBSCRIBED') { 
+                await globalChannel.track({ online_at: new Date().toISOString() }); 
+                loadPersistentChat(); // Load history when connected
+            }
         });
+
+    async function loadPersistentChat() {
+        const { data } = await sb.from('chat_history').select('*').order('created_at', { ascending: false }).limit(30);
+        if (data) {
+            chat.messages = data.reverse().map(d => ({
+                s: d.sender, m: d.message, sys: false, time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            }));
+            renderChat();
+        }
+    }
 
     async function saveCloud() {
         await sb.from('saves').upsert({ user_uuid: playerUUID, game_data: game, updated_at: new Date() }, { onConflict: 'user_uuid' });
@@ -335,7 +346,7 @@
 
     function stopBoostAnimation() { if(boostAnimInterval) { clearInterval(boostAnimInterval); boostAnimInterval = null; } }
 
-    function handleInput() {
+    async function handleInput() {
         const input = document.getElementById('chat-input');
         let val = input.value.trim(); if(!val) return;
         if (val.startsWith('!')) {
@@ -350,8 +361,12 @@
                 renderTab(cmd);
             }
         } else {
-            globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID } });
-            addChatMessage(game.playerName, val, false, true);
+            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            // Broadcast for real-time
+            globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time: timeStr } });
+            // Save to DB for persistence
+            await sb.from('chat_history').insert({ sender: game.playerName, message: val });
+            addChatMessage(game.playerName, val, false, true, timeStr);
         }
         input.value = '';
     }
@@ -396,7 +411,7 @@
         if (count > 0) {
             game.new = 0; game.level = 1; game.exp = 0; game.nextExp = 100; game.autoNew = 0; 
             game.upgrades.forEach(u => u.count = 0);
-            addChatMessage("System", `PRESTIGED! Multiplier is now ${format(game.bruh+1)}x permanently!`, true, true);
+            addChatMessage("System", `PRESTIGED! Multiplier is now ${format(game.bruh+1)}x permanently!`, true, true, new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
             renderTab('!prestige'); updateUI(); saveCloud();
         }
     }
@@ -413,13 +428,21 @@
         if (chat.isOpen) chat.unreadCount = 0; updateUI(); 
     }
 
-    function addChatMessage(s, m, isSystem, isSelf) {
-        chat.messages.push({ s, m, sys: isSystem });
-        if (chat.messages.length > 30) chat.messages.shift();
-        const log = document.getElementById('chat-log');
-        log.innerHTML = chat.messages.map(msg => `<div class="chat-message" style="${msg.sys ? 'opacity:0.6' : ''}"><b>${msg.s}:</b> ${msg.m}</div>`).join('');
-        log.scrollTop = log.scrollHeight;
+    function addChatMessage(s, m, isSystem, isSelf, time) {
+        chat.messages.push({ s, m, sys: isSystem, time: time || "00:00" });
+        if (chat.messages.length > 50) chat.messages.shift();
+        renderChat();
         if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
+    }
+
+    function renderChat() {
+        const log = document.getElementById('chat-log');
+        log.innerHTML = chat.messages.map(msg => `
+            <div class="chat-message" style="${msg.sys ? 'opacity:0.6' : ''}">
+                <span class="chat-time">${msg.time}</span>
+                <b>${msg.s}:</b> ${msg.m}
+            </div>`).join('');
+        log.scrollTop = log.scrollHeight;
     }
 
     document.getElementById('clicker-area').onmousedown = (e) => {
