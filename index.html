@@ -242,6 +242,13 @@
         return (num / Math.pow(10, exp * 3)).toFixed(2) + suffix;
     }
 
+    // High precision format specifically for small yield numbers
+    function formatPrecision(num) {
+        if (num === 0) return "0.000";
+        if (num < 0.001) return num.toFixed(10);
+        return num.toFixed(4);
+    }
+
     const globalChannel = sb.channel('global_hub', { config: { presence: { key: playerUUID } } });
     globalChannel
         .on('broadcast', { event: 'chat' }, (payload) => {
@@ -311,9 +318,14 @@
         document.getElementById('stat-next-exp').innerText = format(game.nextExp);
         document.getElementById('stat-total-exp').innerText = format(game.totalExp);
         
+        // Live updates for Stake and Prestige tabs if they are open
         if (chat.currentTab === '!stake') {
             const stakeLive = document.getElementById('live-yield-val');
-            if (stakeLive) stakeLive.innerText = format(game.unclaimedNews);
+            if (stakeLive) stakeLive.innerText = formatPrecision(game.unclaimedNews);
+        }
+        if (chat.currentTab === '!prestige') {
+            const prestigeLive = document.getElementById('live-prestige-cost');
+            if (prestigeLive) prestigeLive.innerText = format(getPrestigeCost());
         }
 
         const badge = document.getElementById('unread-count');
@@ -433,14 +445,19 @@
         } else if (cmd === '!stake') {
             div.innerHTML = `<div class="invest-stat">
                 <p>Invested: <b>${format(game.stakedNews)}</b></p>
-                <p>Yield: <b id="live-yield-val">${format(game.unclaimedNews)}</b></p>
+                <p style="font-size: 0.6rem; color: #aaa;">Rate: 0.0000000001 / Staked New</p>
+                <p>Unclaimed Yield: <b id="live-yield-val">${formatPrecision(game.unclaimedNews)}</b></p>
             </div>
             <button class="btn-action" onclick="investAll()">INVEST ALL</button>
             <button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button>
             <button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM YIELD</button>`;
         } else if (cmd === '!prestige') {
             let cost = getPrestigeCost();
-            div.innerHTML = `<div class="invest-stat"><p>Current Bruh: <b>${format(game.bruh)}</b></p><p>Perm Multiplier: <b>${format(game.bruh+1)}x</b></p><p>Next Bruh Cost: <b>${format(cost)}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
+            div.innerHTML = `<div class="invest-stat">
+                <p>Current Bruh: <b>${format(game.bruh)}</b></p>
+                <p>Perm Multiplier: <b>${format(game.bruh+1)}x</b></p>
+                <p>Next Level Cost: <b id="live-prestige-cost">${format(cost)}</b> News</p>
+            </div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
         } else if (cmd === '!stats') {
             div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Bruh Multiplier:</span> <b>${format(game.bruh+1)}x</b></div><div class="full-stat-line"><span>Current Level:</span> <b>${format(game.level)}</b></div><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button></div>`;
         } else if (cmd === '!rank') {
@@ -528,7 +545,10 @@
     setInterval(() => {
         let m = getMultiplier(); let gain = (game.autoNew / 10) * m;
         if (gain > 0) { game.new += gain; game.totalNew += gain; addExp(gain * 0.01); }
-        if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.000000001);
+        
+        // Stake Yield Calculation: 0.0000000001 per New staked per tick (10 ticks a second)
+        if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.0000000001);
+        
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
             if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
@@ -536,7 +556,7 @@
         if (game.boostCooldown > 0) game.boostCooldown -= 0.1;
         
         updateUI();
-        if (chat.currentTab === '!upgrades') renderTab('!upgrades'); // Auto-enable buttons
+        if (chat.currentTab === '!upgrades') renderTab('!upgrades'); 
         document.getElementById('live-time').innerText = new Date().toUTCString();
     }, 100);
 
