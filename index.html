@@ -60,7 +60,6 @@
         #p8 { top: 60px; left: 30px; transform: rotate(-3deg); }
         #p9 { top: 70px; left: 50px; transform: rotate(20deg); }
 
-        /* Falling Animation Style */
         .falling-paper {
             position: fixed;
             top: -50px;
@@ -70,9 +69,7 @@
             filter: drop-shadow(0 0 5px var(--neon-dim));
             animation: fall linear forwards;
         }
-        @keyframes fall {
-            to { transform: translateY(110vh) rotate(360deg); }
-        }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
 
         .boost-control { margin-top: 40px; z-index: 100; text-align: center; }
         .btn-boost { background: var(--neon); color: #000; border: none; padding: 12px 24px; font-family: var(--mono); font-weight: bold; cursor: pointer; box-shadow: 0 0 15px var(--neon); }
@@ -91,7 +88,10 @@
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 10px 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; }
         .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; }
         .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
-        .command-hints { font-size: 0.55rem; margin-bottom: 5px; color: var(--neon); opacity: 0.7; text-align: center; }
+        
+        /* Updated Command Hints Style */
+        .command-hints { font-size: 0.55rem; margin-bottom: 5px; color: #FFFFFF; font-weight: bold; text-align: center; letter-spacing: 0.5px; }
+        
         .chat-input-container { display: flex; }
         #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: var(--mono); font-size: 0.85rem; outline: none; }
         #chat-send { background: var(--neon); color: #000; border: none; padding: 0 20px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
@@ -154,7 +154,7 @@
     <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT / TERMINAL</span><span id="chat-toggle-icon">▼</span></div>
     <div id="chat-log"></div>
     <div class="chat-input-area">
-        <div class="command-hints">Type !upgrades !rank !stats !stake !prestige or !close</div>
+        <div class="command-hints">TYPE !upgrades !rank !stats !stake !prestige !close</div>
         <div class="chat-input-container">
             <input type="text" id="chat-input" placeholder="Broadcast message or !command..." maxlength="100">
             <button id="chat-send" onclick="handleInput()">EXEC</button>
@@ -196,7 +196,8 @@
         })
         .on('presence', { event: 'sync' }, () => {
             const state = globalChannel.presenceState();
-            document.getElementById('online-count').innerText = Object.keys(state).length;
+            const onlineNum = Object.keys(state).length;
+            document.getElementById('online-count').innerText = onlineNum;
         })
         .subscribe(async (status) => {
             if (status === 'SUBSCRIBED') {
@@ -280,10 +281,7 @@
     }
 
     function stopBoostAnimation() {
-        if(boostAnimInterval) {
-            clearInterval(boostAnimInterval);
-            boostAnimInterval = null;
-        }
+        if(boostAnimInterval) { clearInterval(boostAnimInterval); boostAnimInterval = null; }
     }
 
     function handleInput() {
@@ -380,9 +378,7 @@
         if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
         let m = getMultiplier();
         let gain = 1 * m;
-        game.new += gain; 
-        game.totalNew += gain;
-        game.totalClicks = (game.totalClicks || 0) + 1;
+        game.new += gain; game.totalNew += gain; game.totalClicks = (game.totalClicks || 0) + 1;
         addExp(gain * 0.05);
         const f = document.createElement('div'); f.className = 'floating-text'; f.innerText = `+${Math.floor(gain)}`;
         f.style.left = e.clientX + 'px'; f.style.top = e.clientY + 'px';
@@ -394,9 +390,7 @@
         if (isNaN(amount) || amount <= 0) return;
         game.exp += amount; game.totalExp += amount;
         while (game.exp >= game.nextExp) {
-            game.exp -= game.nextExp;
-            game.level++;
-            game.nextExp = Math.floor(game.nextExp * 1.5);
+            game.exp -= game.nextExp; game.level++; game.nextExp = Math.floor(game.nextExp * 1.5);
         }
     }
 
