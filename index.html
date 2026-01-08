@@ -210,7 +210,7 @@
         ]
     };
 
-    let chat = { messages: [], unreadCount: 0, isOpen: true };
+    let chat = { messages: [], unreadCount: 0, isOpen: true, currentTab: null };
     let boostAnimInterval = null;
 
     const globalChannel = sb.channel('global_hub', { config: { presence: { key: playerUUID } } });
@@ -249,7 +249,6 @@
         updateTotalCount();
     }
 
-    // MULTIPLIER LOGIC: (1 + Bruh) creates a permanent stacking 1.0x bonus per prestige
     function getMultiplier() { return (1 + game.bruh) * (1 + (game.level * 0.05)) * (game.boostActive ? 5 : 1) * game.premiumMult; }
     function getPrestigeCost() { return 1000000 * Math.pow(10, game.bruh); }
 
@@ -262,6 +261,12 @@
         document.getElementById('stat-next-exp').innerText = game.nextExp.toLocaleString();
         document.getElementById('stat-total-exp').innerText = Math.floor(game.totalExp).toLocaleString();
         
+        // LIVE STAKE UPDATE
+        if (chat.currentTab === '!stake') {
+            const stakeLive = document.getElementById('live-yield-val');
+            if (stakeLive) stakeLive.innerText = game.unclaimedNews.toFixed(8);
+        }
+
         const badge = document.getElementById('unread-count');
         if (chat.unreadCount > 0) { badge.innerText = chat.unreadCount; badge.classList.remove('hidden'); }
         else { badge.classList.add('hidden'); }
@@ -310,10 +315,11 @@
             let cmd = val.toLowerCase();
             const container = document.getElementById('tab-container');
             const clicker = document.getElementById('clicker-area');
-            if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; }
+            if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; chat.currentTab = null; }
             else if (['!upgrades', '!stake', '!stats', '!rank', '!prestige'].includes(cmd)) {
                 container.classList.add('active-tab'); clicker.style.display = 'none';
                 document.getElementById('tab-title').innerText = cmd === '!rank' ? "Leaderboard" : (cmd === '!stake' ? "Invest & Earn More" : cmd.substring(1));
+                chat.currentTab = cmd;
                 renderTab(cmd);
             }
         } else {
@@ -336,7 +342,13 @@
                 div.appendChild(item);
             });
         } else if (cmd === '!stake') {
-            div.innerHTML = `<div class="invest-stat"><p>Invested: <b>${Math.floor(game.stakedNews).toLocaleString()}</b></p><p>Yield: <b>${game.unclaimedNews.toFixed(8)}</b></p></div><button class="btn-action" onclick="investAll()">INVEST ALL</button><button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button><button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM YIELD</button>`;
+            div.innerHTML = `<div class="invest-stat">
+                <p>Invested: <b>${Math.floor(game.stakedNews).toLocaleString()}</b></p>
+                <p>Yield: <b id="live-yield-val">${game.unclaimedNews.toFixed(8)}</b></p>
+            </div>
+            <button class="btn-action" onclick="investAll()">INVEST ALL</button>
+            <button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button>
+            <button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM YIELD</button>`;
         } else if (cmd === '!prestige') {
             let cost = getPrestigeCost();
             div.innerHTML = `<div class="invest-stat"><p>Current Bruh: <b>${game.bruh}</b></p><p>Perm Multiplier: <b>${(game.bruh+1)}x</b></p><p>Next Bruh Cost: <b>${cost.toLocaleString()}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
