@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The News Bruh - Neon Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000;
+            --neon: #39FF14;
+            --neon-dim: #1a5e0b;
+            --old-english: 'UnifrakturMaguntia', serif;
+            --mono: 'Courier Prime', monospace;
+        }
+
+        * { 
+            box-sizing: border-box; margin: 0; padding: 0; 
+            -webkit-tap-highlight-color: transparent; user-select: none;
+        }
+
+        body { 
+            background: var(--bg); color: var(--neon); font-family: var(--mono); 
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+            text-shadow: 0 0 5px var(--neon-dim);
+            
+            /* --- BORDER STYLES --- */
+            border: 6px solid var(--neon);
+            box-shadow: inset 0 0 20px var(--neon), 0 0 20px var(--neon-dim);
+            border-radius: 4px;
+        }
+
+        /* --- GAME UI STYLES --- */
+        #header {
+            border-bottom: 2px solid var(--neon); padding: 10px; text-align: center;
+            background: rgba(0,0,0,0.9); z-index: 10;
+            position: relative;
+        }
+
+        .header-top-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .chat-indicator {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 0.6rem; color: var(--neon); cursor: pointer;
+        }
+
+        .chat-badge {
+            background: var(--neon); color: #000; border-radius: 10px;
+            padding: 2px 6px; font-weight: bold; font-size: 0.5rem;
+            min-width: 16px; text-align: center;
+        }
+
+        h1 {
+            font-family: var(--old-english); font-size: clamp(1.8rem, 6vw, 3rem);
+            color: var(--neon); text-shadow: 0 0 15px var(--neon); margin: 2px 0;
+        }
+
+        .network-stats {
+            font-size: 0.6rem; color: var(--neon); margin-top: 2px;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        .stats-dashboard {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+            padding: 8px; border-bottom: 1px solid var(--neon);
+            background: #050505; font-size: 0.75rem; text-align: left;
+            z-index: 9;
+        }
+
+        .stat-item { display: flex; justify-content: space-between; padding: 0 10px; }
+
+        #clicker-area {
+            flex-grow: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; position: relative;
+            z-index: 5;
+        }
+
+        #emoji-stack { position: relative; width: 180px; height: 180px; }
+        .paper-emoji {
+            position: absolute; font-size: 90px; display: none;
+            filter: drop-shadow(0 0 8px var(--neon)); transition: all 0.3s ease;
+        }
+
+        #p1 { top: 0; left: 0; transform: rotate(-5deg); }
+        #p2 { top: 5px; left: 25px; transform: rotate(10deg); }
+        #p3 { top: 10px; left: 50px; transform: rotate(-8deg); }
+        #p4 { top: 30px; left: -5px; transform: rotate(15deg); }
+        #p5 { top: 35px; left: 20px; transform: rotate(2deg); }
+        #p6 { top: 40px; left: 55px; transform: rotate(-12deg); }
+        #p7 { top: 55px; left: 5px; transform: rotate(7deg); }
+        #p8 { top: 60px; left: 30px; transform: rotate(-3deg); }
+        #p9 { top: 70px; left: 50px; transform: rotate(20deg); }
+
+        .boost-control { margin-top: 60px; z-index: 100; text-align: center; }
+
+        .btn-boost {
+            background: var(--neon); color: #000; border: none;
+            padding: 12px 24px; font-family: var(--mono); font-weight: bold;
+            cursor: pointer; box-shadow: 0 0 15px var(--neon);
+        }
+
+        .btn-boost:disabled {
+            background: #000; color: var(--neon-dim); box-shadow: none; cursor: not-allowed;
+            border: 1px solid var(--neon-dim);
+        }
+
+        #boost-timer-display {
+            font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;
+            color: var(--neon); text-shadow: 0 0 10px var(--neon);
+        }
+
+        .floating-text {
+            position: absolute; color: var(--neon); font-weight: bold;
+            pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 101;
+            white-space: nowrap;
+        }
+
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
+
+        .falling-paper {
+            position: absolute; top: -50px; font-size: 24px;
+            pointer-events: none; animation: fall linear forwards; z-index: 1;
+            opacity: 0.6;
+        }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+
+        #tab-container {
+            flex-grow: 1; padding: 20px; overflow-y: auto; display: none;
+            border: 2px solid var(--neon); margin: 15px; background: rgba(0,0,0,0.95);
+            z-index: 20;
+        }
+
+        #tab-title { 
+            text-transform: capitalize; font-family: var(--old-english); 
+            border-bottom: 1px solid var(--neon); margin-bottom: 15px; font-size: 1.8rem;
+        }
+
+        .active-tab { display: block !important; }
+
+        /* --- CHAT CONTAINER STYLES --- */
+        #chat-container {
+            display: flex; flex-direction: column; height: 250px;
+            border-top: 2px solid var(--neon); background: #000;
+            z-index: 50;
+        }
+
+        .chat-toggle {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 15px; background: rgba(57, 255, 20, 0.05);
+            cursor: pointer; border-bottom: 1px solid var(--neon-dim);
+            font-size: 0.7rem;
+        }
+
+        #chat-log {
+            flex-grow: 1; overflow-y: auto; padding: 10px 15px;
+            display: flex; flex-direction: column; gap: 8px;
+            font-size: 0.75rem;
+        }
+
+        .chat-message {
+            padding: 6px 10px; border-radius: 4px;
+            background: rgba(57, 255, 20, 0.05);
+            border-left: 2px solid var(--neon);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-timestamp {
+            font-size: 0.55rem; color: var(--neon-dim); margin-right: 8px;
+        }
+
+        .chat-username {
+            color: var(--neon); font-weight: bold;
+        }
+
+        .chat-content {
+            word-break: break-word; margin-top: 2px;
+        }
+
+        .chat-input-container {
+            display: flex; padding: 10px 15px; border-top: 1px solid var(--neon-dim);
+            background: rgba(0,0,0,0.8);
+        }
+
+        #chat-input {
+            flex-grow: 1; background: #000; border: 1px solid var(--neon);
+            color: var(--neon); padding: 10px; font-family: var(--mono);
+            font-size: 0.8rem; outline: none;
+        }
+
+        #chat-send {
+            background: var(--neon); color: #000; border: none;
+            padding: 0 15px; font-family: var(--mono); font-weight: bold;
+            cursor: pointer; margin-left: 5px;
+        }
+
+        #close-hint { color: var(--neon); font-size: 0.65rem; margin-bottom: 5px; visibility: hidden; }
+
+        .command-hints { 
+            font-size: 0.7rem; margin-bottom: 8px; color: var(--neon); opacity: 0.8;
+            padding: 5px 15px; background: rgba(57, 255, 20, 0.05);
+        }
+
+        #command-input {
+            width: calc(100% - 30px); 
+            background: #000; border: 1px solid var(--neon);
+            color: var(--neon); padding: 12px; font-family: var(--mono); outline: none;
+            margin: 0 15px 15px 15px;
+        }
+
+        .upgrade-item {
+            display: flex; justify-content: space-between; padding: 12px;
+            border: 1px solid var(--neon); margin-bottom: 8px; cursor: pointer;
+        }
+
+        .paypal-btn {
+            background: #ffc439; color: #000; border: none; padding: 15px;
+            border-radius: 4px; font-weight: bold; width: 100%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin-top: 10px; font-family: Arial, sans-serif;
+            text-shadow: none;
+        }
+
+        .btn-restore {
+            background: transparent; color: var(--neon); border: 1px solid var(--neon-dim);
+            padding: 8px; width: 100%; margin-top: 20px; font-size: 0.7rem;
+            font-family: var(--mono); cursor: pointer; opacity: 0.6;
+        }
+
+        .stake-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-action { background: var(--neon); color: #000; border: none; padding: 10px; font-family: var(--mono); font-weight: bold; cursor: pointer; }
+        .btn-claim { background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 10px; margin-top: 10px; width: 100%; font-family: var(--mono); font-weight: bold; cursor: pointer; }
+
+        .rank-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; margin-top: 10px; }
+        .rank-table th { text-align: left; border-bottom: 1px solid var(--neon); padding: 5px; color: var(--neon); opacity: 0.6; text-transform: uppercase; }
+        .rank-table td { padding: 8px 5px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
+        .rank-self { background: rgba(57, 255, 20, 0.1); color: #fff; font-weight: bold; }
+
+        #edit-name-input {
+            background: #000; border: 1px solid var(--neon); color: var(--neon); 
+            padding: 8px; font-family: var(--mono); width: 70%;
+            outline: none;
+        }
+        
+        #save-status {
+            position: absolute; top: 10px; right: 10px;
+            font-size: 0.6rem; color: var(--neon); opacity: 0;
+            transition: opacity 0.5s; pointer-events: none; z-index: 200;
+        }
+    </style>
+</head>
+<body>
+
+<div id="save-status">SAVED</div>
+
+<div id="header">
+    <div class="header-top-row">
+        <div class="chat-indicator" onclick="toggleChat()">
+            ✉️ <span class="chat-badge" id="unread-count">0</span>
+        </div>
+        <div id="live-time" style="font-size: 0.6rem; color: var(--neon);"></div>
+    </div>
+    <div class="network-stats">
+        Online: <span id="online-count">---</span> | Total: <span id="total-count">---</span>
+    </div>
+    <h1>The News Bruh</h1>
+</div>
+
+<div class="stats-dashboard">
+    <div class="stat-item"><span>🗞️ News:</span> <span id="res-new">0</span></div>
+    <div class="stat-item"><span>Lvl:</span> <span id="stat-level">1</span></div>
+    <div class="stat-item"><span>👑 Bruh:</span> <span id="res-bruh">0</span></div>
+    <div class="stat-item"><span>Exp:</span> <span><span id="stat-exp">0</span>/<span id="stat-next-exp">100</span></span></div>
+    <div class="stat-item"><span>⚡ Mult:</span> <span id="res-mult">1.0</span>x</div>
+    <div class="stat-item"><span>Total Exp:</span> <span id="stat-total-exp">0</span></div>
+</div>
+
+<div id="clicker-area">
+    <div id="emoji-stack">
+        <div class="paper-emoji" id="p1" style="display:block">🗞️</div>
+        <div class="paper-emoji" id="p2">🗞️</div>
+        <div class="paper-emoji" id="p3">🗞️</div>
+        <div class="paper-emoji" id="p4">🗞️</div>
+        <div class="paper-emoji" id="p5">🗞️</div>
+        <div class="paper-emoji" id="p6">🗞️</div>
+        <div class="paper-emoji" id="p7">🗞️</div>
+        <div class="paper-emoji" id="p8">🗞️</div>
+        <div class="paper-emoji" id="p9">🗞️</div>
+    </div>
+
+    <div class="boost-control">
+        <div id="boost-timer-display" style="display:none">Boost: 15.0s</div>
+        <button id="boost-btn" class="btn-boost" onclick="activateBoost(event)" disabled>[ Stack papers to boost ]</button>
+        <p id="tap-msg" style="margin-top: 15px; font-size: 0.7rem; letter-spacing: 2px;">[ TAP TO CIRCULATE ]</p>
+    </div>
+</div>
+
+<div id="tab-container">
+    <h2 id="tab-title"></h2>
+    <div id="tab-content"></div>
+</div>
+
+<div id="chat-container">
+    <div class="chat-toggle" onclick="toggleChat()">
+        <span>IN-GAME CHAT</span>
+        <span id="chat-toggle-icon">▼</span>
+    </div>
+    
+    <div id="chat-log"></div>
+    
+    <div class="chat-input-container">
+        <input type="text" id="chat-input" placeholder="Type message..." maxlength="100" autocomplete="off">
+        <button id="chat-send" onclick="sendChatMessage()">SEND</button>
+    </div>
+</div>
+
+<div class="command-hints">!upgrades !stake !prestige !pb !stats !rank !close</div>
+<input type="text" id="command-input" placeholder="Enter command..." autocomplete="off">
+<div id="close-hint">Type "!close" to Close Upgrade Tabs etc</div>
+
+<script>
+    // --- 1. SUPABASE CONFIGURATION ---
+    // PASTE YOUR KEYS FROM PHASE 1 HERE
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    
+    // Initialize Supabase
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let game = {
+        playerName: "Anonymous",
+        new: 0, totalNew: 0, bruh: 0,
+        level: 1, exp: 0, nextExp: 100, totalExp: 0,
+        clickPower: 1, autoNew: 0, clickCount: 0,
+        boostActive: false, boostCooldown: 0, boostTimeLeft: 0,
+        gameStarted: true,
+        premiumMult: 1,
+        stakedNews: 0,
+        unclaimedNews: 0,
+        upgrades: [
+            { id: 0, name: "Neon Paperboy", baseCost: 15, count: 0, power: 1 },
+            { id: 1, name: "Laser Press", baseCost: 150, count: 0, power: 12 },
+            { id: 2, name: "Cyber Bureau", baseCost: 1800, count: 0, power: 65 },
+            { id: 3, name: "Neural Network", baseCost: 25000, count: 0, power: 320 }
+        ]
+    };
+
+    let chat = {
+        messages: [],
+        unreadCount: 0,
+        isOpen: true,
+        lastMessageTime: Date.now()
+    };
+    
+    // Identity Management
+    let playerUUID = localStorage.getItem('news_bruh_uuid');
+    if (!playerUUID) {
+        playerUUID = crypto.randomUUID();
+        localStorage.setItem('news_bruh_uuid', playerUUID);
+    }
+
+    // --- 2. CLOUD SAVE/LOAD LOGIC ---
+
+    async function saveToCloud() {
+        try {
+            const { error } = await supabase
+                .from('saves')
+                .upsert({ 
+                    user_uuid: playerUUID, 
+                    game_data: game,
+                    updated_at: new Date()
+                }, { onConflict: 'user_uuid' });
+
+            if (!error) {
+                const status = document.getElementById('save-status');
+                status.style.opacity = 1;
+                setTimeout(() => status.style.opacity = 0, 2000);
+            } else {
+                console.error("Save error:", error);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadFromCloud() {
+        try {
+            const { data, error } = await supabase
+                .from('saves')
+                .select('game_data')
+                .eq('user_uuid', playerUUID)
+                .single();
+
+            if (data && data.game_data) {
+                // Merge cloud data into game object
+                Object.assign(game, data.game_data);
+                addChatMessage("System", `Welcome back, ${game.playerName}. Cloud data loaded.`);
+                updateUI();
+            } else {
+                addChatMessage("System", "New user detected. Welcome to The News Bruh!");
+                // First save to initialize row
+                saveToCloud();
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // Standard Game Functions
+    function spawnFallingPaper() {
+        const p = document.createElement('div');
+        p.className = 'falling-paper'; p.innerText = '🗞️';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 4000);
+    }
+
+    function getMultiplier() {
+        return (1 + game.bruh) * (1 + (game.level * 0.05)) * (game.boostActive ? 5 : 1) * game.premiumMult;
+    }
+
+    function addExp(amount) {
+        game.exp += amount;
+        game.totalExp += amount;
+        while (game.exp >= game.nextExp) {
+            game.exp -= game.nextExp;
+            game.level++;
+            game.nextExp = Math.floor(game.nextExp * 1.5);
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('res-new').innerText = Math.floor(game.new).toLocaleString();
+        document.getElementById('res-bruh').innerText = Math.floor(game.bruh).toLocaleString();
+        document.getElementById('res-mult').innerText = getMultiplier().toFixed(1);
+        document.getElementById('stat-level').innerText = game.level;
+        document.getElementById('stat-exp').innerText = Math.floor(game.exp);
+        document.getElementById('stat-next-exp').innerText = game.nextExp;
+        document.getElementById('stat-total-exp').innerText = Math.floor(game.totalExp).toLocaleString();
+        document.getElementById('unread-count').innerText = chat.unreadCount;
+
+        let visibleCount = Math.max(1, Math.min(9, Math.ceil(game.clickCount / 10)));
+        if (game.boostActive) visibleCount = Math.max(1, Math.ceil((game.boostTimeLeft / 15) * 9));
+
+        for (let i = 1; i <= 9; i++) {
+            document.getElementById('p' + i).style.display = i <= visibleCount ? 'block' : 'none';
+        }
+
+        const bBtn = document.getElementById('boost-btn');
+        const bTimer = document.getElementById('boost-timer-display');
+
+        if (game.boostActive) {
+            bBtn.style.display = 'none';
+            bTimer.style.display = 'block';
+            bTimer.innerText = `Boost: ${game.boostTimeLeft.toFixed(1)}s`;
+        } else {
+            bBtn.style.display = 'inline-block';
+            bTimer.style.display = 'none';
+            if (game.boostCooldown > 0) {
+                bBtn.disabled = true;
+                bBtn.innerText = `Cooling: ${Math.ceil(game.boostCooldown)}s`;
+            } else if (game.clickCount < 90) {
+                bBtn.disabled = true;
+                bBtn.innerText = `[ Stacking: ${Math.floor((game.clickCount/90)*100)}% ]`;
+            } else {
+                bBtn.disabled = false;
+                bBtn.innerText = `[ Activate 5x boost ]`;
+            }
+        }
+
+        document.getElementById('online-count').innerText = (450 + Math.floor(Math.random() * 50)).toLocaleString();
+        document.getElementById('total-count').innerText = "2,041,337";
+    }
+
+    // Main Game Loop
+    setInterval(() => {
+        let m = getMultiplier();
+        let gain = (game.autoNew / 10) * m;
+        game.new += gain;
+        game.totalNew += gain;
+        if (gain > 0) addExp(gain * 0.01);
+        
+        if(game.stakedNews > 0) {
+            game.unclaimedNews += (game.stakedNews * 0.000000001) / 10;
+        }
+
+        if (game.boostActive) {
+            game.boostTimeLeft -= 0.1;
+            spawnFallingPaper();
+            if (game.boostTimeLeft <= 0) {
+                game.boostActive = false;
+                game.clickCount = 0;
+                game.boostCooldown = 600;
+            }
+        } else {
+            if (game.clickCount > 0) game.clickCount -= 0.2;
+            if (game.clickCount < 0) game.clickCount = 0;
+        }
+
+        if (game.boostCooldown > 0) game.boostCooldown -= 0.1;
+        
+        updateUI();
+        if(document.getElementById('tab-container').classList.contains('active-tab')) {
+            let currentTab = document.getElementById('tab-title').innerText;
+            if (currentTab === 'Invest & Earn More') renderTab('!stake');
+            if (currentTab === 'Prestige') renderTab('!prestige');
+            if (currentTab === 'Leaderboard') renderTab('!rank');
+        }
+        document.getElementById('live-time').innerText = new Date().toUTCString();
+    }, 100);
+
+    function handleTap(clientX, clientY) {
+        if (!game.boostActive && game.clickCount < 90) game.clickCount += 2;
+        if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
+        let m = getMultiplier();
+        let amount = game.clickPower * m;
+        game.new += amount;
+        addExp(1);
+        const el = document.createElement('div');
+        el.className = 'floating-text';
+        el.innerText = `+${amount.toFixed(0)} 🗞️`;
+        el.style.left = `${clientX}px`; el.style.top = `${clientY}px`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 800);
+    }
+
+    document.getElementById('clicker-area').addEventListener('mousedown', (e) => {
+        if(e.target.id !== 'boost-btn') handleTap(e.clientX, e.clientY);
+    });
+
+    function activateBoost(event) { 
+        if(event) event.stopPropagation();
+        game.boostActive = true; 
+        game.boostTimeLeft = 15; 
+    }
+
+    function addChatMessage(sender, message) {
+        const now = new Date();
+        const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        const messageObj = { sender, message, timestamp, time: now.getTime() };
+        chat.messages.push(messageObj);
+        if (chat.messages.length > 50) chat.messages = chat.messages.slice(-50);
+        updateChatDisplay();
+        if (!chat.isOpen) { chat.unreadCount++; updateUI(); }
+        const chatLog = document.getElementById('chat-log');
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+    
+    function updateChatDisplay() {
+        const chatLog = document.getElementById('chat-log');
+        chatLog.innerHTML = '';
+        chat.messages.forEach(msg => {
+            const msgElement = document.createElement('div');
+            msgElement.className = 'chat-message';
+            msgElement.innerHTML = `<span class="chat-timestamp">${msg.timestamp}</span><span class="chat-username">${msg.sender}:</span><div class="chat-content">${msg.message}</div>`;
+            chatLog.appendChild(msgElement);
+        });
+    }
+    
+    function sendChatMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (message) { addChatMessage(game.playerName, message); input.value = ''; }
+    }
+    
+    function toggleChat() {
+        chat.isOpen = !chat.isOpen;
+        const chatContainer = document.getElementById('chat-container');
+        const chatLog = document.getElementById('chat-log');
+        const chatInputContainer = document.querySelector('.chat-input-container');
+        const toggleIcon = document.getElementById('chat-toggle-icon');
+        if (chat.isOpen) {
+            chatLog.style.display = 'flex'; chatInputContainer.style.display = 'flex';
+            toggleIcon.textContent = '▼'; chatContainer.style.height = '250px';
+            chat.unreadCount = 0; updateUI();
+        } else {
+            chatLog.style.display = 'none'; chatInputContainer.style.display = 'none';
+            toggleIcon.textContent = '▲'; chatContainer.style.height = 'auto';
+        }
+    }
+    
+    document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+
+    const input = document.getElementById('command-input');
+    const container = document.getElementById('tab-container');
+    const closeHint = document.getElementById('close-hint');
+
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const cmd = input.value.toLowerCase().trim();
+            input.value = '';
+            if (cmd === '!close') {
+                container.classList.remove('active-tab');
+                document.getElementById('clicker-area').style.display = 'flex';
+                closeHint.style.visibility = 'hidden';
+            } else if (['!upgrades', '!stake', '!prestige', '!pb', '!stats', '!rank'].includes(cmd)) {
+                container.classList.add('active-tab');
+                document.getElementById('clicker-area').style.display = 'none';
+                if(cmd === '!pb') document.getElementById('tab-title').innerText = 'Premium Boosts';
+                else if(cmd === '!stake') document.getElementById('tab-title').innerText = 'Invest & Earn More';
+                else if(cmd === '!rank') document.getElementById('tab-title').innerText = 'Leaderboard';
+                else document.getElementById('tab-title').innerText = cmd.replace('!', '').charAt(0).toUpperCase() + cmd.slice(2);
+                closeHint.style.visibility = 'visible';
+                renderTab(cmd);
+            }
+        }
+    });
+
+    function saveName() {
+        const nameInput = document.getElementById('edit-name-input');
+        if (nameInput && nameInput.value.trim() !== "") {
+            game.playerName = nameInput.value.trim();
+            alert("Name updated to: " + game.playerName);
+            saveToCloud(); // Immediate save on name change
+        }
+    }
+
+    function renderTab(cmd) {
+        const content = document.getElementById('tab-content');
+        if (cmd === '!upgrades') {
+            content.innerHTML = '';
+            game.upgrades.forEach(u => {
+                let cost = Math.floor(u.baseCost * Math.pow(1.15, u.count));
+                let div = document.createElement('div');
+                div.className = 'upgrade-item';
+                div.innerHTML = `<span>${u.name} (Lv.${u.count})</span> <span>${cost.toLocaleString()} 🗞️</span>`;
+                div.onclick = () => {
+                    if (game.new >= cost) { game.new -= cost; u.count++; game.autoNew += u.power; renderTab('!upgrades'); }
+                };
+                content.appendChild(div);
+            });
+        } else if (cmd === '!stats') {
+            content.innerHTML = `
+                <div style="margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;">
+                    <label style="font-size:0.6rem; color:var(--neon-dim); display:block; margin-bottom:5px;">EDITOR IDENTITY</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="edit-name-input" value="${game.playerName}" maxlength="12">
+                        <button class="btn-action" onclick="saveName()" style="width:auto; padding:5px 15px;">SAVE</button>
+                    </div>
+                </div>
+                <p>Passive: ${game.autoNew.toFixed(1)}/s</p>
+                <p>Click Power: ${game.clickPower}</p>
+                <p>Lifetime News: ${Math.floor(game.totalNew).toLocaleString()}</p>
+                <p>Total Exp: ${Math.floor(game.totalExp).toLocaleString()}</p>
+                <p style="margin-top:20px; font-size:0.7rem; color:var(--neon-dim)">UUID: ${playerUUID.substring(0,8)}...</p>
+            `;
+        } else if (cmd === '!pb') {
+            content.innerHTML = `
+                <p style="margin-bottom:20px; text-align:center; font-weight:bold;">x20 Permanent Multiplier for £0.99</p>
+                <button class="paypal-btn" onclick="window.open('https://www.paypal.com', '_blank')"><i>PayPal</i> Checkout</button>
+                <button class="btn-restore" onclick="alert('Searching for previous purchases...')">RESTORE PURCHASES</button>
+            `;
+        } else if (cmd === '!stake') {
+            content.innerHTML = `
+                <div class="upgrade-item" style="cursor:default; flex-direction:column; align-items:flex-start;">
+                    <span style="font-size:0.7rem; opacity:0.7;">INVESTED VAULT</span>
+                    <span style="font-size:1.2rem;">${Math.floor(game.stakedNews).toLocaleString()} 🗞️</span>
+                </div>
+                <div class="upgrade-item" style="cursor:default; flex-direction:column; align-items:flex-start;">
+                    <span style="font-size:0.7rem; opacity:0.7;">UNCLAIMED REWARDS</span>
+                    <span style="font-size:1.2rem; color:#fff;">${game.unclaimedNews.toFixed(6)} 🗞️</span>
+                </div>
+                <div class="stake-btn-group">
+                    <button class="btn-action" onclick="stakeAction()">INVEST ALL</button>
+                    <button class="btn-action" style="background:#444; color:#fff;" onclick="unstakeAction()">WITHDRAW ALL</button>
+                </div>
+                <button class="btn-claim" onclick="claimAction()">CLAIM 🗞️ NEWS</button>
+            `;
+        } else if (cmd === '!prestige') {
+            let bruhCost = 1000000;
+            let affordable = Math.floor(game.new / bruhCost);
+            content.innerHTML = `
+                <p style="margin-bottom:15px; font-size:0.8rem;">1M News = 1 Bruh.</p>
+                <button class="btn-action" style="width:100%;" onclick="prestigeAction(${affordable})">BUY ALL AFFORDABLE (${affordable.toLocaleString()} 👑)</button>
+            `;
+        } else if (cmd === '!rank') {
+            let players = [
+                { name: "BruhMaster", level: 150, bruh: 5000 },
+                { name: "NeonPress", level: 98, bruh: 2400 },
+                { name: "PaperTrail", level: 45, bruh: 800 },
+                { name: "InkLord", level: 32, bruh: 150 }
+            ];
+            players.push({ name: game.playerName, level: game.level, bruh: game.bruh, isSelf: true });
+            players.sort((a, b) => b.bruh - a.bruh);
+            let tableHtml = `<table class="rank-table"><tr><th>Name</th><th>Level</th><th>Bruh</th></tr>`;
+            players.forEach(p => {
+                tableHtml += `<tr class="${p.isSelf ? 'rank-self' : ''}"><td>${p.name}</td><td>${p.level}</td><td>${Math.floor(p.bruh).toLocaleString()}</td></tr>`;
+            });
+            content.innerHTML = tableHtml + `</table>`;
+        }
+    }
+
+    function prestigeAction(amount) {
+        if (amount > 0 && game.new >= (1000000 * amount)) {
+            if(confirm(`Prestige for ${amount.toLocaleString()} Bruh?`)) {
+                game.bruh += amount; game.new = 0; game.level = 1; game.exp = 0; game.nextExp = 100;
+                game.autoNew = 0; game.upgrades.forEach(u => u.count = 0);
+                renderTab('!prestige');
+            }
+        }
+    }
+
+    function stakeAction() { if(game.new > 0) { game.stakedNews += game.new; game.new = 0; renderTab('!stake'); } }
+    function unstakeAction() { if(game.stakedNews > 0) { game.new += game.stakedNews; game.stakedNews = 0; renderTab('!stake'); } }
+    function claimAction() { if(game.unclaimedNews > 0) { game.new += game.unclaimedNews; game.unclaimedNews = 0; renderTab('!stake'); } }
+
+    window.onload = () => {
+        // Load from cloud immediately on startup
+        loadFromCloud();
+        updateUI();
+    };
+    
+    // Auto-save to cloud every 10 seconds (instead of 5 to save API quota)
+    setInterval(() => {
+        saveToCloud();
+    }, 10000);
+</script>
+</body>
+</html>
