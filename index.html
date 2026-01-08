@@ -29,7 +29,6 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* How To Play Modal */
         #how-to-play-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 2000;
@@ -122,10 +121,10 @@
         <div class="htp-content">
             <ul>
                 <li>🗞️ <b>Tap</b> the newspapers to earn News.</li>
-                <li>📈 <b>Level Up:</b> Every tap and passive gain earns you EXP for level-based multipliers.</li>
-                <li>🔥 <b>Boost:</b> Fill the stack to activate 5x production and make it rain 🗞️!</li>
-                <li>💬 <b>Terminal:</b> Type <b>!upgrades</b> to buy gear or <b>!rank</b> to see the elite.</li>
-                <li>👑 <b>Prestige:</b> Use <b>!prestige</b> to reset for permanent Bruh multipliers.</li>
+                <li>📈 <b>Level Up:</b> Every tap earns EXP for multipliers.</li>
+                <li>🔥 <b>Boost:</b> Fill the stack to activate 5x production.</li>
+                <li>💬 <b>Terminal:</b> Use <b>!upgrades</b> or <b>!prestige</b> to grow.</li>
+                <li>👑 <b>Bruh:</b> Prestige to earn permanent stacking multipliers!</li>
             </ul>
         </div>
     </div>
@@ -215,7 +214,6 @@
     let boostAnimInterval = null;
 
     const globalChannel = sb.channel('global_hub', { config: { presence: { key: playerUUID } } });
-
     globalChannel
         .on('broadcast', { event: 'chat' }, (payload) => {
             const isSelf = payload.payload.uid === playerUUID;
@@ -251,6 +249,7 @@
         updateTotalCount();
     }
 
+    // MULTIPLIER LOGIC: (1 + Bruh) creates a permanent stacking 1.0x bonus per prestige
     function getMultiplier() { return (1 + game.bruh) * (1 + (game.level * 0.05)) * (game.boostActive ? 5 : 1) * game.premiumMult; }
     function getPrestigeCost() { return 1000000 * Math.pow(10, game.bruh); }
 
@@ -340,16 +339,9 @@
             div.innerHTML = `<div class="invest-stat"><p>Invested: <b>${Math.floor(game.stakedNews).toLocaleString()}</b></p><p>Yield: <b>${game.unclaimedNews.toFixed(8)}</b></p></div><button class="btn-action" onclick="investAll()">INVEST ALL</button><button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button><button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM YIELD</button>`;
         } else if (cmd === '!prestige') {
             let cost = getPrestigeCost();
-            div.innerHTML = `<div class="invest-stat"><p>Current Multiplier: <b>${(game.bruh+1)}x</b></p><p>Next Bruh Cost: <b>${cost.toLocaleString()}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
+            div.innerHTML = `<div class="invest-stat"><p>Current Bruh: <b>${game.bruh}</b></p><p>Perm Multiplier: <b>${(game.bruh+1)}x</b></p><p>Next Bruh Cost: <b>${cost.toLocaleString()}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
         } else if (cmd === '!stats') {
-            div.innerHTML = `
-                <div style="padding:10px; border:1px solid var(--neon)">
-                    <p style="font-size:0.6rem; opacity:0.7; margin-bottom:5px;">NETWORK IDENTITY</p>
-                    <input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%">
-                    <div class="full-stat-line"><span>Current Level:</span> <b>${game.level}</b></div>
-                    <div class="full-stat-line"><span>Lifetime EXP:</span> <b>${Math.floor(game.totalExp).toLocaleString()}</b></div>
-                    <button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button>
-                </div>`;
+            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Bruh Status:</span> <b>${game.bruh}</b></div><div class="full-stat-line"><span>Current Level:</span> <b>${game.level}</b></div><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button></div>`;
         } else if (cmd === '!rank') {
             div.innerHTML = 'Loading Leaderboard...';
             sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(5).then(({data}) => {
@@ -363,9 +355,10 @@
     function buyAllBruh() {
         let count = 0; while (game.new >= getPrestigeCost()) { game.new -= getPrestigeCost(); game.bruh++; count++; }
         if (count > 0) {
-            game.new = 0; game.level = 1; game.exp = 0; game.nextExp = 100; game.autoNew = 0; game.upgrades.forEach(u => u.count = 0);
-            addChatMessage("System", `PRESTIGED! Multiplier boosted!`, true, true);
-            renderTab('!prestige'); updateUI();
+            game.new = 0; game.level = 1; game.exp = 0; game.nextExp = 100; game.autoNew = 0; 
+            game.upgrades.forEach(u => u.count = 0);
+            addChatMessage("System", `PRESTIGED! Multiplier is now ${(game.bruh+1)}x permanently!`, true, true);
+            renderTab('!prestige'); updateUI(); saveCloud();
         }
     }
 
