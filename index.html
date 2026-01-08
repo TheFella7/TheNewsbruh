@@ -29,23 +29,29 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
+        /* Enhanced How To Play Modal */
         #how-to-play-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 2000;
+            background: rgba(0,0,0,0.95); z-index: 2000;
             display: flex; align-items: center; justify-content: center;
         }
         #how-to-play-box {
-            width: 85%; max-width: 400px; background: #000; border: 2px solid var(--neon);
-            padding: 20px; position: relative; box-shadow: 0 0 20px var(--neon-dim);
+            width: 90%; max-width: 450px; background: #000; border: 2px solid var(--neon);
+            padding: 25px; position: relative; box-shadow: 0 0 30px var(--neon-dim);
+            max-height: 85vh; overflow-y: auto;
         }
         #close-htp {
-            position: absolute; top: 10px; right: 15px; font-size: 1.5rem;
-            cursor: pointer; font-weight: bold; color: var(--neon);
+            position: absolute; top: 10px; right: 15px; font-size: 1.8rem;
+            cursor: pointer; font-weight: bold; color: var(--neon); text-shadow: 0 0 10px var(--neon);
         }
-        .htp-title { font-family: var(--old-english); font-size: 2rem; margin-bottom: 15px; text-align: center; border-bottom: 1px solid var(--neon); }
-        .htp-content { font-size: 0.8rem; line-height: 1.4; color: #fff; }
+        .htp-header { font-family: var(--old-english); font-size: 2.2rem; text-align: center; margin-bottom: 5px; color: var(--neon); }
+        .htp-sub { font-size: 0.6rem; text-align: center; margin-bottom: 20px; letter-spacing: 2px; opacity: 0.8; }
+        .htp-section-title { font-size: 0.75rem; font-weight: bold; color: #fff; background: var(--neon-dim); padding: 4px 8px; margin: 15px 0 10px 0; display: inline-block; }
+        .htp-content { font-size: 0.75rem; line-height: 1.5; color: #eee; }
         .htp-content b { color: var(--neon); }
-        .htp-content li { margin-bottom: 8px; list-style-type: none; }
+        .cmd-list { list-style: none; }
+        .cmd-list li { margin-bottom: 10px; padding-left: 10px; border-left: 1px solid var(--neon-dim); }
+        .cmd-list code { color: var(--neon); font-weight: bold; font-size: 0.85rem; }
 
         #save-status {
             position: absolute; top: 10px; right: 10px; font-size: 0.6rem;
@@ -117,14 +123,23 @@
 <div id="how-to-play-overlay">
     <div id="how-to-play-box">
         <div id="close-htp" onclick="document.getElementById('how-to-play-overlay').style.display='none'">X</div>
-        <div class="htp-title">How To Play</div>
+        <div class="htp-header">The News Bruh</div>
+        <div class="htp-sub">SYSTEM VERSION 2.0 // BRUH_OS</div>
+        
         <div class="htp-content">
-            <ul>
-                <li>🗞️ <b>Tap</b> the newspapers to earn News.</li>
-                <li>📈 <b>Level Up:</b> Every tap earns EXP for multipliers.</li>
-                <li>🔥 <b>Boost:</b> Fill the stack to activate 5x production.</li>
-                <li>💬 <b>Terminal:</b> Use <b>!upgrades</b> or <b>!prestige</b> to grow.</li>
-                <li>👑 <b>Bruh:</b> Prestige to earn permanent stacking multipliers!</li>
+            <div class="htp-section-title">BASICS</div>
+            <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
+            📈 <b>LEVEL UP</b> by clicking to increase your base multiplier.<br>
+            🔥 <b>BOOST</b> by stacking papers. Activate it for <b>5.0x</b> News and massive EXP.</p>
+
+            <div class="htp-section-title">TERMINAL COMMANDS</div>
+            <ul class="cmd-list">
+                <li><code>!upgrades</code> - Hire paperboys and buy laser presses for passive news.</li>
+                <li><code>!stake</code> - Deposit news to earn <b>Live Yield</b> interest over time.</li>
+                <li><code>!prestige</code> - Reset progress for permanent <b>👑 Bruh</b> multipliers.</li>
+                <li><code>!rank</code> - Access the global elite leaderboard.</li>
+                <li><code>!stats</code> - View lifetime progress and change your <b>Network Alias</b>.</li>
+                <li><code>!close</code> - Close any active terminal window and return to stack.</li>
             </ul>
         </div>
     </div>
@@ -261,7 +276,6 @@
         document.getElementById('stat-next-exp').innerText = game.nextExp.toLocaleString();
         document.getElementById('stat-total-exp').innerText = Math.floor(game.totalExp).toLocaleString();
         
-        // LIVE STAKE UPDATE
         if (chat.currentTab === '!stake') {
             const stakeLive = document.getElementById('live-yield-val');
             if (stakeLive) stakeLive.innerText = game.unclaimedNews.toFixed(8);
