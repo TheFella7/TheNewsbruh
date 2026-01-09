@@ -29,17 +29,18 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        #how-to-play-overlay {
+        /* Modal / Popups */
+        #how-to-play-overlay, #offline-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
+            display: none; align-items: center; justify-content: center;
         }
-        #how-to-play-box {
+        #how-to-play-box, #offline-box {
             width: 90%; max-width: 450px; background: #000; border: 2px solid var(--neon);
             padding: 25px; position: relative; box-shadow: 0 0 30px var(--neon-dim);
-            max-height: 85vh; overflow-y: auto;
+            max-height: 85vh; overflow-y: auto; text-align: center;
         }
-        #close-htp {
+        #close-htp, #close-offline {
             position: absolute; top: 10px; right: 15px; font-size: 1.8rem;
             cursor: pointer; font-weight: bold; color: var(--neon); text-shadow: 0 0 10px var(--neon);
         }
@@ -132,11 +133,11 @@
 </head>
 <body>
 
-<div id="how-to-play-overlay">
+<div id="how-to-play-overlay" style="display:flex;">
     <div id="how-to-play-box">
         <div id="close-htp" onclick="document.getElementById('how-to-play-overlay').style.display='none'">X</div>
         <div class="htp-header">The News Bruh</div>
-        <div class="htp-sub">SYSTEM VERSION 2.3 // NEON_OS</div>
+        <div class="htp-sub">SYSTEM VERSION 2.4 // NEON_OS</div>
         <div class="htp-content">
             <div class="htp-section-title">BASICS</div>
             <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
@@ -151,6 +152,21 @@
                 <li><code>!stats</code> - Lifetime progress and Alias change.</li>
                 <li><code>!close</code> - Return to stack.</li>
             </ul>
+        </div>
+    </div>
+</div>
+
+<div id="offline-overlay">
+    <div id="offline-box">
+        <div class="htp-header">Offline Log</div>
+        <div class="htp-sub">WELCOME BACK, BRUH</div>
+        <div class="htp-content">
+            <p>You were gone for: <b id="off-time">0h 0m</b></p>
+            <div class="htp-section-title">EARNINGS</div>
+            <p>🗞️ News Generated: <b id="off-news">0</b></p>
+            <p>📈 Staking Yield: <b id="off-stake">0</b></p>
+            <br>
+            <button class="btn-action" onclick="document.getElementById('offline-overlay').style.display='none'">RESUME CIRCULATION</button>
         </div>
     </div>
 </div>
@@ -228,6 +244,7 @@
         clickPower: 1, autoNew: 0, clickCount: 0, totalClicks: 0,
         boostActive: false, boostCooldown: 0, boostTimeLeft: 0,
         premiumMult: 1, stakedNews: 0, unclaimedNews: 0,
+        lastSaveTime: Date.now(),
         upgrades: [
             { id: 0, name: "Neon Paperboy", baseCost: 15, count: 0, power: 1 },
             { id: 1, name: "Laser Press", baseCost: 150, count: 0, power: 12 },
@@ -244,14 +261,10 @@
         const suffixes = ["k", "m", "b", "t"];
         let exp = Math.floor(Math.log10(num) / 3);
         if (exp <= 4) return (num / Math.pow(10, exp * 3)).toFixed(2) + (suffixes[exp - 1] || "");
-        
         let alphaExp = exp - 5;
         let suffix = "";
         let n = alphaExp;
-        while (n >= 0) {
-            suffix = String.fromCharCode(97 + (n % 26)) + suffix;
-            n = Math.floor(n / 26) - 1;
-        }
+        while (n >= 0) { suffix = String.fromCharCode(97 + (n % 26)) + suffix; n = Math.floor(n / 26) - 1; }
         return (num / Math.pow(10, exp * 3)).toFixed(2) + suffix;
     }
 
@@ -269,7 +282,6 @@
         .subscribe(async (status) => {
             if (status === 'SUBSCRIBED') { 
                 await globalChannel.track({ online_at: new Date().toISOString() }); 
-                // CRITICAL: Ensure loadPersistentChat is called every time on subscription/refresh
                 loadPersistentChat();
                 updateGlobalMsgCount();
             }
@@ -277,18 +289,10 @@
 
     async function loadPersistentChat() {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        // FETCHING ALL MESSAGES FROM LAST 24 HOURS
-        const { data } = await sb.from('chat_history')
-            .select('*')
-            .gt('created_at', yesterday)
-            .order('created_at', { ascending: true });
-        
+        const { data } = await sb.from('chat_history').select('*').gt('created_at', yesterday).order('created_at', { ascending: true });
         if (data) {
             chat.messages = data.map(d => ({
-                s: d.sender, 
-                m: d.message, 
-                sys: false, 
-                time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                s: d.sender, m: d.message, sys: false, time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
             }));
             renderChat();
         }
@@ -300,6 +304,7 @@
     }
 
     async function saveCloud() {
+        game.lastSaveTime = Date.now();
         await sb.from('saves').upsert({ user_uuid: playerUUID, game_data: game, updated_at: new Date() }, { onConflict: 'user_uuid' });
         const el = document.getElementById('save-status');
         el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 2000);
@@ -314,13 +319,35 @@
     async function loadCloud() {
         const { data } = await sb.from('saves').select('game_data').eq('user_uuid', playerUUID).single();
         if (data) { 
-            Object.assign(game, data.game_data); 
+            const savedData = data.game_data;
+            const offlineTime = Math.min((Date.now() - savedData.lastSaveTime) / 1000, 43200); // Cap 12h (43200s)
+            
+            Object.assign(game, savedData); 
             if (isNaN(game.totalExp)) game.totalExp = 0;
+
+            if (offlineTime > 60) {
+                calculateOffline(offlineTime);
+            }
             updateUI(); 
         }
         updateTotalCount();
-        // Load chat history immediately on load as well
         loadPersistentChat();
+    }
+
+    function calculateOffline(seconds) {
+        const mult = (1 + game.bruh) * game.premiumMult;
+        const generated = game.autoNew * mult * seconds;
+        const yield = game.stakedNews * 0.00001 * seconds;
+        
+        game.new += generated;
+        game.unclaimedNews += yield;
+        game.totalNew += generated;
+        addExp(generated * 0.01);
+
+        document.getElementById('off-time').innerText = `${Math.floor(seconds/3600)}h ${Math.floor((seconds%3600)/60)}m`;
+        document.getElementById('off-news').innerText = format(generated);
+        document.getElementById('off-stake').innerText = format(yield);
+        document.getElementById('offline-overlay').style.display = 'flex';
     }
 
     function getMultiplier() { return (1 + game.bruh) * (game.boostActive ? 5 : 1) * game.premiumMult; }
@@ -410,9 +437,7 @@
             }
         } else {
             const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            // Send to live players
             globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time: timeStr } });
-            // Save to DB for 24h persistence
             await sb.from('chat_history').insert({ sender: game.playerName, message: val });
             addChatMessage(game.playerName, val, false, true, timeStr);
             updateGlobalMsgCount();
@@ -420,29 +445,16 @@
         input.value = '';
     }
 
-    function getUpgradeNextCost(u) {
-        return Math.floor(u.baseCost * Math.pow(1.15, u.count));
-    }
+    function getUpgradeNextCost(u) { return Math.floor(u.baseCost * Math.pow(1.15, u.count)); }
 
     function buyMaxUpgrades(u) {
-        let b = game.new;
-        let r = 1.15;
-        let c = getUpgradeNextCost(u);
+        let b = game.new; let r = 1.15; let c = getUpgradeNextCost(u);
         if (b < c) return;
         let n = Math.floor(Math.log(1 - (b * (1 - r) / c)) / Math.log(r));
         if (n <= 0) n = 1;
         let totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
-        while (totalCost > b && n > 0) {
-            n--;
-            totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
-        }
-        if (n > 0) {
-            game.new -= totalCost;
-            u.count += n;
-            game.autoNew += (u.power * n);
-            renderTab('!upgrades');
-            updateUI();
-        }
+        while (totalCost > b && n > 0) { n--; totalCost = c * (1 - Math.pow(r, n)) / (1 - r); }
+        if (n > 0) { game.new -= totalCost; u.count += n; game.autoNew += (u.power * n); renderTab('!upgrades'); updateUI(); }
     }
 
     function renderTab(cmd) {
@@ -454,50 +466,21 @@
                 let canAfford = game.new >= cost;
                 let row = document.createElement('div');
                 row.className = 'upgrade-row';
-                row.innerHTML = `
-                    <div class="upgrade-info">
-                        <span><b>${u.name}</b> (Lv.${format(u.count)})</span>
-                        <span>+${format(u.power)}/s</span>
-                    </div>
-                    <div class="upgrade-btns">
-                        <button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button>
-                        <button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyMaxUpgrades(game.upgrades[${u.id}])">BUY MAX</button>
-                    </div>
-                `;
+                row.innerHTML = `<div class="upgrade-info"><span><b>${u.name}</b> (Lv.${format(u.count)})</span><span>+${format(u.power)}/s</span></div><div class="upgrade-btns"><button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button><button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyMaxUpgrades(game.upgrades[${u.id}])">BUY MAX</button></div>`;
                 div.appendChild(row);
             });
         } else if (cmd === '!stake') {
-            div.innerHTML = `<div class="invest-stat">
-                <p>Invested: <b>${format(game.stakedNews)}</b></p>
-                <p style="font-size: 0.6rem; color: #FFFFFF;">Rate: 0.00001 News / Staked New</p>
-                <p>Unclaimed Yield: <b id="live-yield-val">${format(game.unclaimedNews)}</b></p>
-            </div>
-            <button class="btn-action" onclick="investAll()">INVEST ALL</button>
-            <button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button>
-            <button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM NEWS YIELD</button>`;
+            div.innerHTML = `<div class="invest-stat"><p>Invested: <b>${format(game.stakedNews)}</b></p><p style="font-size: 0.6rem; color: #FFFFFF;">Rate: 0.00001 News / Staked New</p><p>Unclaimed Yield: <b id="live-yield-val">${format(game.unclaimedNews)}</b></p></div><button class="btn-action" onclick="investAll()">INVEST ALL</button><button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button><button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM NEWS YIELD</button>`;
         } else if (cmd === '!prestige') {
             let cost = getPrestigeCost();
-            div.innerHTML = `<div class="invest-stat">
-                <p>Current Bruh: <b>${format(game.bruh)}</b></p>
-                <p>Perm Multiplier: <b>${format(game.bruh+1)}x</b></p>
-                <p>Next Level Cost: <b id="live-prestige-cost">${format(cost)}</b> News</p>
-            </div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
+            div.innerHTML = `<div class="invest-stat"><p>Current Bruh: <b>${format(game.bruh)}</b></p><p>Perm Multiplier: <b>${format(game.bruh+1)}x</b></p><p>Next Level Cost: <b id="live-prestige-cost">${format(cost)}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
         } else if (cmd === '!stats') {
-            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Bruh Multiplier:</span> <b>${format(game.bruh+1)}x</b></div><div class="full-stat-line"><span>Current Level:</span> <b>${format(game.level)}</b></div><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button></div>`;
+            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Current Multiplier:</span> <b>${format(game.bruh+1)}x</b></div><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button></div>`;
         } else if (cmd === '!rank') {
             div.innerHTML = 'Loading Leaderboard...';
             sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(10).then(({data}) => {
                 let html = '<table class="rank-table"><tr><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
-                if(data) {
-                    data.forEach(d => { 
-                        let p = d.game_data;
-                        html += `<tr>
-                            <td>${p.playerName || "Anonymous"}</td>
-                            <td>${format(p.bruh || 0)}</td>
-                            <td>${format(p.level || 1)}</td>
-                        </tr>`; 
-                    });
-                }
+                if(data) data.forEach(d => { let p = d.game_data; html += `<tr><td>${p.playerName || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; });
                 div.innerHTML = html + '</table>';
             });
         }
@@ -506,13 +489,7 @@
     function buyUpgrade(id) {
         const u = game.upgrades.find(x => x.id === id);
         const cost = getUpgradeNextCost(u);
-        if (game.new >= cost) {
-            game.new -= cost;
-            u.count++;
-            game.autoNew += u.power;
-            renderTab('!upgrades');
-            updateUI();
-        }
+        if (game.new >= cost) { game.new -= cost; u.count++; game.autoNew += u.power; renderTab('!upgrades'); updateUI(); }
     }
 
     function buyAllBruh() {
@@ -538,7 +515,6 @@
     }
 
     function addChatMessage(s, m, isSystem, isSelf, time) {
-        // Only push if message is not already in the array (preventing duplicates from broadcast + historical fetch)
         const isDuplicate = chat.messages.some(msg => msg.s === s && msg.m === m && msg.time === time);
         if (!isDuplicate) {
             chat.messages.push({ s, m, sys: isSystem, time: time || "00:00" });
@@ -550,11 +526,7 @@
 
     function renderChat() {
         const log = document.getElementById('chat-log');
-        log.innerHTML = chat.messages.map(msg => `
-            <div class="chat-message" style="${msg.sys ? 'opacity:0.6' : ''}">
-                <span class="chat-time">${msg.time}</span>
-                <b>${msg.s}:</b> ${msg.m}
-            </div>`).join('');
+        log.innerHTML = chat.messages.map(msg => `<div class="chat-message"><span class="chat-time">${msg.time}</span><b>${msg.s}:</b> ${msg.m}</div>`).join('');
         log.scrollTop = log.scrollHeight;
     }
 
@@ -563,8 +535,7 @@
         if (!game.boostActive && game.clickCount < 90) game.clickCount += 2;
         if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
         let m = getMultiplier(); let gain = 1 * m;
-        game.new += gain; game.totalNew += gain; game.totalClicks = (game.totalClicks || 0) + 1;
-        addExp(gain * 0.05);
+        game.new += gain; game.totalNew += gain; addExp(gain * 0.05);
         const f = document.createElement('div'); f.className = 'floating-text'; f.innerText = `+${format(gain)}`;
         f.style.left = e.clientX + 'px'; f.style.top = e.clientY + 'px';
         document.body.appendChild(f); setTimeout(() => f.remove(), 800);
@@ -572,7 +543,6 @@
     };
 
     function addExp(amount) {
-        if (isNaN(amount) || amount <= 0) return;
         game.exp += amount; game.totalExp += amount;
         while (game.exp >= game.nextExp) { game.exp -= game.nextExp; game.level++; game.nextExp *= 1.5; }
     }
@@ -583,18 +553,13 @@
         let m = getMultiplier(); 
         let gain = (game.autoNew / 10) * m;
         if (gain > 0) { game.new += gain; game.totalNew += gain; addExp(gain * 0.01); }
-        
-        if (game.stakedNews > 0) {
-            game.unclaimedNews += (game.stakedNews * 0.00001 / 10);
-        }
-
+        if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.00001 / 10);
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
             if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
         } else if (game.clickCount > 0) { game.clickCount -= 0.2; }
         if (game.boostCooldown > 0) game.boostCooldown -= 0.1;
         updateUI();
-        if (chat.currentTab === '!upgrades') renderTab('!upgrades'); 
     }, 100);
 
     setInterval(saveCloud, 15000);
