@@ -136,7 +136,7 @@
     <div id="how-to-play-box">
         <div id="close-htp" onclick="document.getElementById('how-to-play-overlay').style.display='none'">X</div>
         <div class="htp-header">The News Bruh</div>
-        <div class="htp-sub">SYSTEM VERSION 2.1 // NEON_OS</div>
+        <div class="htp-sub">SYSTEM VERSION 2.2 // NEON_OS</div>
         <div class="htp-content">
             <div class="htp-section-title">BASICS</div>
             <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
@@ -313,7 +313,9 @@
     }
 
     function getMultiplier() { return (1 + game.bruh) * (game.boostActive ? 5 : 1) * game.premiumMult; }
-    function getPrestigeCost() { return 1000000 * Math.pow(10, game.bruh); }
+    
+    // ADJUSTED: prestige cost now scales by 5x instead of 10x, making it cheaper
+    function getPrestigeCost() { return 500000 * Math.pow(5, game.bruh); }
 
     function updateUI() {
         document.getElementById('res-new').innerText = format(game.new);
@@ -567,7 +569,6 @@
         let gain = (game.autoNew / 10) * m;
         if (gain > 0) { game.new += gain; game.totalNew += gain; addExp(gain * 0.01); }
         
-        // Rate changed to 0.00001
         if (game.stakedNews > 0) {
             game.unclaimedNews += (game.stakedNews * 0.00001 / 10);
         }
