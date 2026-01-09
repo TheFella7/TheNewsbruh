@@ -136,7 +136,7 @@
     <div id="how-to-play-box">
         <div id="close-htp" onclick="document.getElementById('how-to-play-overlay').style.display='none'">X</div>
         <div class="htp-header">The News Bruh</div>
-        <div class="htp-sub">SYSTEM VERSION 2.2 // NEON_OS</div>
+        <div class="htp-sub">SYSTEM VERSION 2.3 // NEON_OS</div>
         <div class="htp-content">
             <div class="htp-section-title">BASICS</div>
             <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
@@ -269,6 +269,7 @@
         .subscribe(async (status) => {
             if (status === 'SUBSCRIBED') { 
                 await globalChannel.track({ online_at: new Date().toISOString() }); 
+                // CRITICAL: Ensure loadPersistentChat is called every time on subscription/refresh
                 loadPersistentChat();
                 updateGlobalMsgCount();
             }
@@ -276,10 +277,18 @@
 
     async function loadPersistentChat() {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data } = await sb.from('chat_history').select('*').gt('created_at', yesterday).order('created_at', { ascending: true });
+        // FETCHING ALL MESSAGES FROM LAST 24 HOURS
+        const { data } = await sb.from('chat_history')
+            .select('*')
+            .gt('created_at', yesterday)
+            .order('created_at', { ascending: true });
+        
         if (data) {
             chat.messages = data.map(d => ({
-                s: d.sender, m: d.message, sys: false, time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                s: d.sender, 
+                m: d.message, 
+                sys: false, 
+                time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
             }));
             renderChat();
         }
@@ -310,11 +319,11 @@
             updateUI(); 
         }
         updateTotalCount();
+        // Load chat history immediately on load as well
+        loadPersistentChat();
     }
 
     function getMultiplier() { return (1 + game.bruh) * (game.boostActive ? 5 : 1) * game.premiumMult; }
-    
-    // ADJUSTED: prestige cost now scales by 5x instead of 10x, making it cheaper
     function getPrestigeCost() { return 500000 * Math.pow(5, game.bruh); }
 
     function updateUI() {
@@ -401,7 +410,9 @@
             }
         } else {
             const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            // Send to live players
             globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time: timeStr } });
+            // Save to DB for 24h persistence
             await sb.from('chat_history').insert({ sender: game.playerName, message: val });
             addChatMessage(game.playerName, val, false, true, timeStr);
             updateGlobalMsgCount();
@@ -527,10 +538,14 @@
     }
 
     function addChatMessage(s, m, isSystem, isSelf, time) {
-        chat.messages.push({ s, m, sys: isSystem, time: time || "00:00" });
-        if (chat.messages.length > 100) chat.messages.shift();
-        renderChat();
-        if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
+        // Only push if message is not already in the array (preventing duplicates from broadcast + historical fetch)
+        const isDuplicate = chat.messages.some(msg => msg.s === s && msg.m === m && msg.time === time);
+        if (!isDuplicate) {
+            chat.messages.push({ s, m, sys: isSystem, time: time || "00:00" });
+            if (chat.messages.length > 500) chat.messages.shift();
+            renderChat();
+            if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
+        }
     }
 
     function renderChat() {
