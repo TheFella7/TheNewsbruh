@@ -364,7 +364,6 @@
                 btn.innerText = `Stack: ${Math.floor((game.clickCount/90)*100)}%`; 
             }
             else { 
-                // AUTO ACTIVATE TRIGGER
                 activateBoost(); 
             }
         }
@@ -457,7 +456,7 @@
         } else if (cmd === '!stake') {
             div.innerHTML = `<div class="invest-stat">
                 <p>Invested: <b>${format(game.stakedNews)}</b></p>
-                <p style="font-size: 0.6rem; color: #aaa;">Rate: 0.0000000001 / Staked New</p>
+                <p style="font-size: 0.6rem; color: #FFFFFF;">Rate: 0.01 / Staked New</p>
                 <p>Unclaimed Yield: <b id="live-yield-val">${formatPrecision(game.unclaimedNews)}</b></p>
             </div>
             <button class="btn-action" onclick="investAll()">INVEST ALL</button>
@@ -566,7 +565,7 @@
     setInterval(() => {
         let m = getMultiplier(); let gain = (game.autoNew / 10) * m;
         if (gain > 0) { game.new += gain; game.totalNew += gain; addExp(gain * 0.01); }
-        if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.0000000001);
+        if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.01 / 10); // Div 10 because interval is 100ms
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
             if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
@@ -582,3 +581,4 @@
 </script>
 </body>
 </html>
+
