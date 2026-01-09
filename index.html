@@ -122,6 +122,11 @@
         .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
         .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
         .full-stat-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(57, 255, 20, 0.1); font-size: 0.75rem; }
+
+        /* Leaderboard Table Styling */
+        .rank-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; margin-top: 10px; }
+        .rank-table th { border-bottom: 1px solid var(--neon); padding: 8px; text-align: left; color: var(--neon); }
+        .rank-table td { padding: 8px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
     </style>
 </head>
 <body>
@@ -242,7 +247,6 @@
         return (num / Math.pow(10, exp * 3)).toFixed(2) + suffix;
     }
 
-    // High precision format specifically for small yield numbers
     function formatPrecision(num) {
         if (num === 0) return "0.000";
         if (num < 0.001) return num.toFixed(10);
@@ -318,7 +322,6 @@
         document.getElementById('stat-next-exp').innerText = format(game.nextExp);
         document.getElementById('stat-total-exp').innerText = format(game.totalExp);
         
-        // Live updates for Stake and Prestige tabs if they are open
         if (chat.currentTab === '!stake') {
             const stakeLive = document.getElementById('live-yield-val');
             if (stakeLive) stakeLive.innerText = formatPrecision(game.unclaimedNews);
@@ -402,16 +405,13 @@
         let r = 1.15;
         let c = getUpgradeNextCost(u);
         if (b < c) return;
-        
         let n = Math.floor(Math.log(1 - (b * (1 - r) / c)) / Math.log(r));
         if (n <= 0) n = 1;
-
         let totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
         while (totalCost > b && n > 0) {
             n--;
             totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
         }
-
         if (n > 0) {
             game.new -= totalCost;
             u.count += n;
@@ -462,9 +462,18 @@
             div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Bruh Multiplier:</span> <b>${format(game.bruh+1)}x</b></div><div class="full-stat-line"><span>Current Level:</span> <b>${format(game.level)}</b></div><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button></div>`;
         } else if (cmd === '!rank') {
             div.innerHTML = 'Loading Leaderboard...';
-            sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(5).then(({data}) => {
-                let html = '<table style="width:100%; font-size:0.7rem;"><tr><th>Name</th><th>Level</th></tr>';
-                if(data) data.forEach(d => { html += `<tr><td>${d.game_data.playerName}</td><td>${format(d.game_data.level)}</td></tr>`; });
+            sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(10).then(({data}) => {
+                let html = '<table class="rank-table"><tr><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
+                if(data) {
+                    data.forEach(d => { 
+                        let p = d.game_data;
+                        html += `<tr>
+                            <td>${p.playerName || "Anonymous"}</td>
+                            <td>${format(p.bruh || 0)}</td>
+                            <td>${format(p.level || 1)}</td>
+                        </tr>`; 
+                    });
+                }
                 div.innerHTML = html + '</table>';
             });
         }
@@ -545,19 +554,14 @@
     setInterval(() => {
         let m = getMultiplier(); let gain = (game.autoNew / 10) * m;
         if (gain > 0) { game.new += gain; game.totalNew += gain; addExp(gain * 0.01); }
-        
-        // Stake Yield Calculation: 0.0000000001 per New staked per tick (10 ticks a second)
         if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.0000000001);
-        
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
             if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
         } else if (game.clickCount > 0) { game.clickCount -= 0.2; }
         if (game.boostCooldown > 0) game.boostCooldown -= 0.1;
-        
         updateUI();
         if (chat.currentTab === '!upgrades') renderTab('!upgrades'); 
-        document.getElementById('live-time').innerText = new Date().toUTCString();
     }, 100);
 
     setInterval(saveCloud, 15000);
