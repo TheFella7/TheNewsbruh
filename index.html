@@ -90,10 +90,12 @@
         }
         @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
 
-        .boost-control { margin-top: 40px; z-index: 100; text-align: center; }
+        .boost-control { margin-top: 20px; z-index: 100; text-align: center; }
         .btn-boost { background: var(--neon); color: #000; border: none; padding: 12px 24px; font-family: var(--mono); font-weight: bold; cursor: pointer; box-shadow: 0 0 15px var(--neon); }
         .btn-boost:disabled { background: #000; color: var(--neon-dim); box-shadow: none; cursor: not-allowed; border: 1px solid var(--neon-dim); }
         #boost-timer-display { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+        
+        #nps-display { font-size: 0.9rem; color: var(--neon); margin-top: 10px; font-weight: bold; text-shadow: 0 0 5px var(--neon-dim); }
 
         .floating-text { position: absolute; color: var(--neon); font-weight: bold; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 101; white-space: nowrap; }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
@@ -123,7 +125,6 @@
         .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
         .full-stat-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(57, 255, 20, 0.1); font-size: 0.75rem; }
 
-        /* Leaderboard Table Styling */
         .rank-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; margin-top: 10px; }
         .rank-table th { border-bottom: 1px solid var(--neon); padding: 8px; text-align: left; color: var(--neon); }
         .rank-table td { padding: 8px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
@@ -140,7 +141,7 @@
             <div class="htp-section-title">BASICS</div>
             <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
             📈 <b>LEVEL UP</b> by clicking to increase multiplier.<br>
-            🔥 <b>BOOST</b> by stacking papers. Activate for <b>5.0x</b> News.</p>
+            🔥 <b>BOOST</b> auto-triggers at 100% stack for <b>5.0x</b> News.</p>
             <div class="htp-section-title">TERMINAL COMMANDS</div>
             <ul class="cmd-list">
                 <li><code>!upgrades</code> - Passive income sources.</li>
@@ -191,6 +192,7 @@
     <div class="boost-control">
         <div id="boost-timer-display" style="display:none">Boost: 15.0s</div>
         <button id="boost-btn" class="btn-boost" onclick="activateBoost(event)" disabled>[ Stack papers ]</button>
+        <div id="nps-display">0.0 Nps</div>
         <p id="tap-msg" style="margin-top: 15px; font-size: 0.7rem; letter-spacing: 2px;">[ TAP TO CIRCULATE ]</p>
     </div>
 </div>
@@ -322,6 +324,9 @@
         document.getElementById('stat-next-exp').innerText = format(game.nextExp);
         document.getElementById('stat-total-exp').innerText = format(game.totalExp);
         
+        let currentNps = game.autoNew * getMultiplier();
+        document.getElementById('nps-display').innerText = `${format(currentNps)} Nps`;
+
         if (chat.currentTab === '!stake') {
             const stakeLive = document.getElementById('live-yield-val');
             if (stakeLive) stakeLive.innerText = formatPrecision(game.unclaimedNews);
@@ -344,6 +349,7 @@
 
         const btn = document.getElementById('boost-btn');
         const tmr = document.getElementById('boost-timer-display');
+        
         if (game.boostActive) { 
             btn.style.display = 'none'; tmr.style.display = 'block'; 
             tmr.innerText = `Boost: ${game.boostTimeLeft.toFixed(1)}s`; 
@@ -353,8 +359,14 @@
             btn.style.display = 'inline-block'; tmr.style.display = 'none';
             stopBoostAnimation();
             if (game.boostCooldown > 0) { btn.disabled = true; btn.innerText = `Cool: ${Math.ceil(game.boostCooldown)}s`; }
-            else if (game.clickCount < 90) { btn.disabled = true; btn.innerText = `Stack: ${Math.floor((game.clickCount/90)*100)}%`; }
-            else { btn.disabled = false; btn.innerText = `ACTIVATE 5x`; }
+            else if (game.clickCount < 90) { 
+                btn.disabled = true; 
+                btn.innerText = `Stack: ${Math.floor((game.clickCount/90)*100)}%`; 
+            }
+            else { 
+                // AUTO ACTIVATE TRIGGER
+                activateBoost(); 
+            }
         }
     }
 
@@ -549,7 +561,7 @@
         while (game.exp >= game.nextExp) { game.exp -= game.nextExp; game.level++; game.nextExp *= 1.5; }
     }
 
-    function activateBoost(e) { e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; updateUI(); }
+    function activateBoost(e) { if(e) e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; updateUI(); }
 
     setInterval(() => {
         let m = getMultiplier(); let gain = (game.autoNew / 10) * m;
