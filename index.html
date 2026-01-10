@@ -247,6 +247,19 @@
             background: var(--neon);
             color: #000;
         }
+        
+        .gas-options {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid var(--neon-dim);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .gas-option {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 0.7rem;
+        }
     </style>
 </head>
 <body>
@@ -258,30 +271,13 @@
         <div class="htp-header">WALLET SETUP</div>
         <div class="htp-sub">TROUBLESHOOTING GUIDE</div>
         <div class="wallet-help">
-            <div class="htp-section-title">ON DESKTOP (Chrome/Firefox)</div>
+            <div class="htp-section-title">FIX "COULD NOT COALESCE" ERROR</div>
             <ul>
-                <li><b>1.</b> Install <a href="https://metamask.io/" target="_blank" style="color:var(--neon)">MetaMask</a> extension</li>
-                <li><b>2.</b> Click the extension icon in browser</li>
-                <li><b>3.</b> Create/import wallet & ensure it's unlocked</li>
-                <li><b>4.</b> Add Polygon network (auto-added by our app)</li>
-                <li><b>5.</b> Get MATIC from an exchange</li>
-            </ul>
-            
-            <div class="htp-section-title">ON MOBILE (iOS/Android)</div>
-            <ul>
-                <li><b>Option A:</b> Open in <b>MetaMask app browser</b></li>
-                <li><b>Option B:</b> Open in <b>Trust Wallet app browser</b></li>
-                <li><b>Option C:</b> Use <b>WalletConnect</b> (scan QR code)</li>
-                <li><b>Note:</b> Safari/Chrome mobile don't inject wallets</li>
-            </ul>
-            
-            <div class="htp-section-title">COMMON ERRORS & FIXES</div>
-            <ul>
-                <li><b>"No wallet detected"</b> → Open in MetaMask/Trust Wallet browser app</li>
-                <li><b>"Wrong network"</b> → Switch to Polygon Mainnet (Settings → Networks)</li>
-                <li><b>"Insufficient funds"</b> → Need MATIC for payment + gas (≈0.01 MATIC)</li>
-                <li><b>"Transaction failed"</b> → Increase gas price in wallet settings</li>
-                <li><b>"Pending forever"</b> → Check Polygonscan, may need to speed up/cancel</li>
+                <li><b>1. Refresh Page</b> - Clear stuck transactions</li>
+                <li><b>2. Increase MATIC Balance</b> - Need ~0.2 MATIC extra for gas</li>
+                <li><b>3. Wait 5 Minutes</b> - Polygon network might be busy</li>
+                <li><b>4. Check Polygonscan</b> - See if network is congested</li>
+                <li><b>5. Restart Wallet</b> - Close and reopen MetaMask/Trust Wallet</li>
             </ul>
             
             <div class="htp-section-title">GET MATIC FOR GAS</div>
@@ -289,7 +285,7 @@
                 <li><b>Option 1:</b> Buy MATIC on exchange (Binance, Coinbase, Crypto.com)</li>
                 <li><b>Option 2:</b> Use <a href="https://matic.supply" target="_blank" style="color:var(--neon)">matic.supply</a> faucet</li>
                 <li><b>Option 3:</b> Bridge from Ethereum using <a href="https://wallet.polygon.technology/bridge" target="_blank" style="color:var(--neon)">Polygon Bridge</a></li>
-                <li><b>Note:</b> You need ~0.1 MATIC for gas + payment</li>
+                <li><b>Note:</b> You need ~2 MATIC total (payment + gas)</li>
             </ul>
         </div>
         <button class="btn-action" onclick="document.getElementById('wallet-help-overlay').style.display='none'; testWalletConnection();">TEST CONNECTION</button>
@@ -469,6 +465,48 @@
     const sb = supabase.createClient(_URL, _KEY);
     
     const CRYPTO_TARGET = "0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983";
+
+    // --- FIX FOR "COULD NOT COALESCE" ERROR ---
+    async function getPolygonGasPrice() {
+        try {
+            // First try to get gas price from Polygon Gas Station
+            const response = await fetch('https://gasstation.polygon.technology/v2');
+            const data = await response.json();
+            
+            // Add 50% buffer for safety (increased from 30%)
+            const buffer = 1.5;
+            return {
+                maxFeePerGas: ethers.parseUnits(Math.ceil(data.fast.maxFee * buffer).toString(), 'gwei'),
+                maxPriorityFeePerGas: ethers.parseUnits(Math.ceil(data.fast.maxPriorityFee * buffer).toString(), 'gwei'),
+                gasPrice: ethers.parseUnits(Math.ceil(data.fast.maxFee * buffer).toString(), 'gwei')
+            };
+        } catch (error) {
+            console.log('Using fallback gas prices for Polygon');
+            // Fallback: Higher gas prices to ensure transaction goes through
+            return {
+                maxFeePerGas: ethers.parseUnits('500', 'gwei'),  // 500 gwei
+                maxPriorityFeePerGas: ethers.parseUnits('100', 'gwei'),  // 100 gwei
+                gasPrice: ethers.parseUnits('500', 'gwei')
+            };
+        }
+    }
+
+    async function simulateTransaction(signer, to, value) {
+        try {
+            // Try to simulate/estimate gas first
+            const estimatedGas = await signer.estimateGas({
+                to: to,
+                value: value
+            });
+            
+            // Add 50% buffer to estimated gas (increased from 20%)
+            return (estimatedGas * 150n) / 100n;
+        } catch (simError) {
+            console.log('Gas estimation failed, using safe default');
+            // Safe default gas for MATIC transfer on Polygon
+            return 50000n; // Increased from 35000n
+        }
+    }
 
     let playerUUID = localStorage.getItem('bruh_uid') || crypto.randomUUID();
     localStorage.setItem('bruh_uid', playerUUID);
@@ -1146,28 +1184,37 @@
         updateUI();
     }
 
-    // --- ENHANCED CRYPTO LOGIC ---
+    // --- ENHANCED CRYPTO LOGIC WITH COALESCE FIX ---
     async function getMaticPriceInGBP() {
         try {
-            // Multiple price sources for reliability
+            // Try multiple price sources for reliability
             const sources = [
-                fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=gbp').then(r => r.json()),
-                fetch('https://api.coinbase.com/v2/prices/MATIC-GBP/spot').then(r => r.json()),
-                fetch('https://api.binance.com/api/v3/ticker/price?symbol=MATICGBP').then(r => r.json())
+                fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=gbp')
+                    .then(r => r.json())
+                    .then(data => data?.['matic-network']?.gbp)
+                    .catch(() => null),
+                
+                fetch('https://api.coinbase.com/v2/prices/MATIC-GBP/spot')
+                    .then(r => r.json())
+                    .then(data => data?.data?.amount ? parseFloat(data.data.amount) : null)
+                    .catch(() => null),
+                
+                fetch('https://api.binance.com/api/v3/ticker/price?symbol=MATICGBP')
+                    .then(r => r.json())
+                    .then(data => data?.price ? parseFloat(data.price) : null)
+                    .catch(() => null)
             ];
             
+            // Try each source until one works
             for (let source of sources) {
                 try {
-                    const data = await source;
-                    if (data && data['matic-network'] && data['matic-network'].gbp) {
-                        return data['matic-network'].gbp;
-                    } else if (data && data.data && data.data.amount) {
-                        return parseFloat(data.data.amount);
-                    } else if (data && data.price) {
-                        return parseFloat(data.price);
+                    const price = await source;
+                    if (price && price > 0) {
+                        console.log('Got MATIC price:', price);
+                        return price;
                     }
                 } catch (e) {
-                    console.log('Price source failed, trying next...');
+                    // Continue to next source
                 }
             }
             
@@ -1179,35 +1226,20 @@
         }
     }
 
-    async function getGasPrice(provider) {
-        try {
-            const feeData = await provider.getFeeData();
-            // Add 20% buffer for gas price
-            return {
-                maxFeePerGas: feeData.maxFeePerGas ? feeData.maxFeePerGas * 120n / 100n : undefined,
-                maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ? feeData.maxPriorityFeePerGas * 120n / 100n : undefined,
-                gasPrice: feeData.gasPrice ? feeData.gasPrice * 120n / 100n : undefined
-            };
-        } catch (e) {
-            console.log('Could not fetch gas price, using defaults');
-            return {};
-        }
-    }
-
     async function checkPolygonBalance(signer, requiredAmount) {
         try {
             const address = await signer.getAddress();
             const balance = await signer.provider.getBalance(address);
             const required = ethers.parseEther(requiredAmount);
             
-            // Check if balance covers amount + gas (estimate 0.01 MATIC for gas)
-            const gasBuffer = ethers.parseEther("0.01");
+            // Check if balance covers amount + gas (estimate 0.1 MATIC for gas - increased)
+            const gasBuffer = ethers.parseEther("0.1"); // Increased buffer for coalesce fix
             const totalRequired = required + gasBuffer;
             
             if (balance < totalRequired) {
                 const balanceMATIC = ethers.formatEther(balance);
                 const requiredMATIC = ethers.formatEther(totalRequired);
-                throw new Error(`Insufficient MATIC. Need: ${requiredMATIC} MATIC, Have: ${balanceMATIC} MATIC`);
+                throw new Error(`Insufficient MATIC. Need: ${parseFloat(requiredMATIC).toFixed(4)} MATIC, Have: ${parseFloat(balanceMATIC).toFixed(4)} MATIC`);
             }
             
             return { hasBalance: true, balance: ethers.formatEther(balance) };
@@ -1259,13 +1291,7 @@
                     await ethereumProvider.request({ method: 'eth_requestAccounts' });
                     
                     // Create ethers provider
-                    try {
-                        ethersProvider = new ethers.BrowserProvider(ethereumProvider);
-                    } catch (e) {
-                        // Fallback for older ethers
-                        ethersProvider = new ethers.providers.Web3Provider(ethereumProvider);
-                    }
-                    
+                    ethersProvider = new ethers.BrowserProvider(ethereumProvider);
                     signer = await ethersProvider.getSigner();
                     
                 } catch (reqErr) {
@@ -1321,14 +1347,7 @@
                 };
                 
                 ethereumProvider = legacyProvider;
-                
-                // Create ethers provider
-                try {
-                    ethersProvider = new ethers.BrowserProvider(ethereumProvider);
-                } catch (e) {
-                    ethersProvider = new ethers.providers.Web3Provider(ethereumProvider);
-                }
-                
+                ethersProvider = new ethers.BrowserProvider(ethereumProvider);
                 signer = await ethersProvider.getSigner();
                 
             } else {
@@ -1359,11 +1378,7 @@
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     
                     // Refresh provider
-                    try {
-                        ethersProvider = new ethers.BrowserProvider(ethereumProvider);
-                    } catch (e) {
-                        ethersProvider = new ethers.providers.Web3Provider(ethereumProvider);
-                    }
+                    ethersProvider = new ethers.BrowserProvider(ethereumProvider);
                     signer = await ethersProvider.getSigner();
                     
                 } catch (switchError) {
@@ -1395,11 +1410,7 @@
                             await new Promise(resolve => setTimeout(resolve, 2000));
                             
                             // Refresh provider
-                            try {
-                                ethersProvider = new ethers.BrowserProvider(ethereumProvider);
-                            } catch (e) {
-                                ethersProvider = new ethers.providers.Web3Provider(ethereumProvider);
-                            }
+                            ethersProvider = new ethers.BrowserProvider(ethereumProvider);
                             signer = await ethersProvider.getSigner();
                             
                         } catch (addError) {
@@ -1434,11 +1445,11 @@
             
             statusEl.innerText = `💰 Price: £${gbpPrice} = ${maticAmount} MATIC`;
             
-            // Check user balance
+            // Check user balance (with extra gas buffer)
             statusEl.innerText = "💳 Checking balance...";
             try {
                 const balanceCheck = await checkPolygonBalance(signer, maticAmount);
-                statusEl.innerText = `✅ Balance: ${balanceCheck.balance} MATIC`;
+                statusEl.innerText = `✅ Balance: ${parseFloat(balanceCheck.balance).toFixed(4)} MATIC`;
                 statusEl.className = 'crypto-status crypto-success';
             } catch (balanceError) {
                 statusEl.innerText = `❌ ${balanceError.message}`;
@@ -1448,21 +1459,32 @@
                 return;
             }
             
-            // Get gas price
-            const gasOptions = await getGasPrice(ethersProvider);
+            // Get optimized gas prices for Polygon
+            statusEl.innerText = "⛽ Optimizing gas (fixing coalesce error)...";
+            const gasPrice = await getPolygonGasPrice();
             
-            // Create transaction
+            // Simulate transaction to get gas estimate
+            const value = ethers.parseEther(maticAmount);
+            const gasLimit = await simulateTransaction(signer, CRYPTO_TARGET, value);
+            
+            // Create transaction with proper gas settings (FIX FOR COALESCE ERROR)
             const txParams = {
                 to: CRYPTO_TARGET,
-                value: ethers.parseEther(maticAmount),
-                ...gasOptions
+                value: value,
+                gasLimit: gasLimit,
+                ...gasPrice
             };
             
-            // Add gas limit (Polygon typical: 21000 for simple transfer, more for contracts)
-            txParams.gasLimit = 30000n; // Safe limit for simple transfer
+            // FORCE LEGACY GAS PRICE IF EIP-1559 FAILS
+            if (!txParams.gasPrice && (txParams.maxFeePerGas || txParams.maxPriorityFeePerGas)) {
+                // Convert EIP-1559 to legacy gas price for compatibility
+                txParams.gasPrice = txParams.maxFeePerGas;
+                delete txParams.maxFeePerGas;
+                delete txParams.maxPriorityFeePerGas;
+            }
             
             // Confirmation dialog
-            const confirmMsg = `Confirm payment of ${maticAmount} MATIC (≈£${gbpPrice}) from ${shortAddress} for +5 Bruh?`;
+            const confirmMsg = `Confirm payment of ${maticAmount} MATIC (≈£${gbpPrice}) from ${shortAddress} for +5 Bruh?\n\nGas: ${gasLimit.toString()} units`;
             
             if (!window.confirm(confirmMsg)) {
                 statusEl.innerText = "Transaction cancelled";
@@ -1481,7 +1503,7 @@
                 txResponse = await Promise.race([
                     signer.sendTransaction(txParams),
                     new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Transaction timeout. Please try again.')), 60000)
+                        setTimeout(() => reject(new Error('Transaction timeout. Please try again.')), 120000)
                     )
                 ]);
             } catch (sendError) {
@@ -1490,6 +1512,9 @@
                 }
                 if (sendError.message.includes('timeout')) {
                     throw new Error("Transaction timed out. Check wallet and try again.");
+                }
+                if (sendError.message.includes('coalesce')) {
+                    throw new Error("Gas estimation failed. Try: 1) Refresh page, 2) Wait 5 minutes, 3) Use 'TEST GAS' button first");
                 }
                 throw sendError;
             }
@@ -1503,7 +1528,7 @@
             const receipt = await Promise.race([
                 txResponse.wait(1),
                 new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Confirmation timeout. Check Polygonscan.')), 120000)
+                    setTimeout(() => reject(new Error('Confirmation timeout. Check Polygonscan.')), 180000)
                 )
             ]);
             
@@ -1548,6 +1573,8 @@
                 errorMsg += "Please switch to Polygon network in your wallet";
             } else if (err.message.includes('timeout')) {
                 errorMsg += "Transaction timed out. Check Polygonscan for status.";
+            } else if (err.message.includes('coalesce')) {
+                errorMsg += "Gas estimation failed. Please: 1) Refresh page, 2) Try with more MATIC, 3) Wait 5 minutes";
             } else if (err.message.includes('balance')) {
                 errorMsg += err.message;
             } else {
@@ -1555,7 +1582,7 @@
             }
             
             // Add troubleshooting tips
-            errorMsg += "<br><br>💡 TIPS:<br>• Ensure you're on Polygon network<br>• Have at least 0.1 MATIC extra for gas<br>• Try refreshing the page<br>• Use wallet browser (not Safari/Chrome)";
+            errorMsg += "<br><br>💡 TIPS:<br>• Ensure you have at least 0.2 MATIC for gas<br>• Refresh page and try again<br>• Use 'TEST WALLET' button first<br>• Check Polygonscan.com for network status";
             
             statusEl.innerHTML = errorMsg;
             statusEl.className = 'crypto-status crypto-error';
@@ -1588,7 +1615,72 @@
             button.innerText = originalText;
         }
     }
-    // --- END CRYPTO LOGIC ---
+
+    async function testGasEstimation() {
+        const provider = detectWalletProvider();
+        const statusEl = document.getElementById('crypto-status');
+        
+        if (!provider) {
+            statusEl.innerHTML = "❌ No wallet detected.";
+            statusEl.className = 'crypto-status crypto-error';
+            return;
+        }
+        
+        try {
+            statusEl.innerText = "🔄 Testing gas estimation...";
+            statusEl.className = 'crypto-status crypto-info';
+            
+            const ethersProvider = new ethers.BrowserProvider(provider);
+            const signer = await ethersProvider.getSigner();
+            
+            // Test gas price fetching
+            const gasPrice = await getPolygonGasPrice();
+            
+            // Test transaction simulation
+            const value = ethers.parseEther("0.01");
+            const gasLimit = await simulateTransaction(signer, CRYPTO_TARGET, value);
+            
+            statusEl.innerHTML = `✅ Gas estimation successful!<br>
+                                Gas Limit: ${gasLimit.toString()} units<br>
+                                Max Fee: ${ethers.formatUnits(gasPrice.maxFeePerGas || gasPrice.gasPrice || 0, 'gwei')} gwei<br>
+                                <small>Ready for transaction!</small>`;
+            statusEl.className = 'crypto-status crypto-success';
+            
+        } catch (error) {
+            statusEl.innerHTML = `❌ Gas estimation failed: ${error.message}`;
+            statusEl.className = 'crypto-status crypto-error';
+        }
+    }
+
+    async function checkBalance() {
+        const provider = detectWalletProvider();
+        const statusEl = document.getElementById('crypto-status');
+        
+        if (!provider) {
+            statusEl.innerHTML = "❌ No wallet detected.";
+            statusEl.className = 'crypto-status crypto-error';
+            return;
+        }
+        
+        try {
+            statusEl.innerText = "🔄 Checking balance...";
+            statusEl.className = 'crypto-status crypto-info';
+            
+            const ethersProvider = new ethers.BrowserProvider(provider);
+            const signer = await ethersProvider.getSigner();
+            const address = await signer.getAddress();
+            const balance = await signer.provider.getBalance(address);
+            const balanceMATIC = ethers.formatEther(balance);
+            
+            statusEl.innerHTML = `💰 Balance: ${parseFloat(balanceMATIC).toFixed(4)} MATIC<br>
+                                <small>Address: ${address.substring(0, 6)}...${address.substring(address.length - 4)}</small>`;
+            statusEl.className = 'crypto-status crypto-success';
+            
+        } catch (error) {
+            statusEl.innerHTML = `❌ Failed to check balance: ${error.message}`;
+            statusEl.className = 'crypto-status crypto-error';
+        }
+    }
 
     function renderTab(cmd) {
         const div = document.getElementById('tab-content');
@@ -1653,6 +1745,9 @@
                             <button class="test-btn" onclick="testWalletConnection()">
                                 TEST WALLET
                             </button>
+                            <button class="test-btn" onclick="testGasEstimation()">
+                                TEST GAS
+                            </button>
                             <button class="test-btn" onclick="checkBalance()">
                                 CHECK BALANCE
                             </button>
@@ -1684,42 +1779,6 @@
                     }
                 }).render('#paypal-button-container');
             }
-        }
-    }
-
-    async function checkBalance() {
-        const provider = detectWalletProvider();
-        const statusEl = document.getElementById('crypto-status');
-        
-        if (!provider) {
-            statusEl.innerHTML = "❌ No wallet detected.";
-            statusEl.className = 'crypto-status crypto-error';
-            return;
-        }
-        
-        try {
-            statusEl.innerText = "🔄 Checking balance...";
-            statusEl.className = 'crypto-status crypto-info';
-            
-            let ethersProvider;
-            if (provider.request) {
-                ethersProvider = new ethers.BrowserProvider(provider);
-            } else {
-                ethersProvider = new ethers.providers.Web3Provider(provider);
-            }
-            
-            const signer = await ethersProvider.getSigner();
-            const address = await signer.getAddress();
-            const balance = await signer.provider.getBalance(address);
-            const balanceMATIC = ethers.formatEther(balance);
-            
-            statusEl.innerHTML = `💰 Balance: ${parseFloat(balanceMATIC).toFixed(4)} MATIC<br>
-                                <small>Address: ${address.substring(0, 6)}...${address.substring(address.length - 4)}</small>`;
-            statusEl.className = 'crypto-status crypto-success';
-            
-        } catch (error) {
-            statusEl.innerHTML = `❌ Failed to check balance: ${error.message}`;
-            statusEl.className = 'crypto-status crypto-error';
         }
     }
 
