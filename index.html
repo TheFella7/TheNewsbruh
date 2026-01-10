@@ -63,12 +63,57 @@
             width: 100%; background: #000; border: 1px solid var(--neon);
             color: var(--neon); padding: 10px; margin-bottom: 10px;
             font-family: var(--mono); text-align: center; outline: none;
+            padding-right: 40px; /* Space for eye icon */
+        }
+        .password-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--neon);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .auth-tabs { display: flex; justify-content: center; margin-bottom: 15px; gap: 10px; }
         .auth-tab { cursor: pointer; opacity: 0.5; border-bottom: 1px solid transparent; }
         .auth-tab.active { opacity: 1; border-bottom: 1px solid var(--neon); font-weight: bold; }
         #auth-error { color: var(--error); font-size: 0.7rem; margin-top: 10px; min-height: 15px; text-shadow: none; }
         .auth-status { font-size: 0.6rem; color: var(--neon); border: 1px solid var(--neon); padding: 3px 6px; cursor: pointer; margin-right: 5px;}
+
+        /* Reset Password Link */
+        .reset-password-link {
+            font-size: 0.7rem;
+            color: var(--neon);
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            text-decoration: underline;
+            opacity: 0.8;
+        }
+        .reset-password-link:hover {
+            opacity: 1;
+        }
+        .back-to-login {
+            font-size: 0.7rem;
+            color: var(--neon);
+            cursor: pointer;
+            margin-top: 15px;
+            display: block;
+            text-decoration: underline;
+        }
 
         #save-status {
             position: absolute; top: 10px; right: 10px; font-size: 0.6rem;
@@ -243,14 +288,54 @@
         <div class="auth-tabs">
             <div class="auth-tab active" id="tab-login" onclick="switchAuthMode('login')">LOGIN</div>
             <div class="auth-tab" id="tab-register" onclick="switchAuthMode('register')">REGISTER</div>
+            <div class="auth-tab" id="tab-reset" onclick="switchAuthMode('reset')">RESET PASSWORD</div>
         </div>
 
         <div id="auth-form">
-            <input type="email" id="auth-email" class="auth-input" placeholder="EMAIL ADDRESS">
-            <input type="password" id="auth-pass" class="auth-input" placeholder="PASSWORD">
-            <p style="font-size:0.6rem; color:#aaa; margin-bottom:10px;" id="auth-note"></p>
-            <div id="auth-error"></div>
-            <button class="btn-action" id="auth-submit" onclick="handleAuthSubmit()">ACCESS MAINFRAME</button>
+            <!-- Login/Register Form -->
+            <div id="login-register-form">
+                <input type="email" id="auth-email" class="auth-input" placeholder="EMAIL ADDRESS">
+                <div class="password-container">
+                    <input type="password" id="auth-pass" class="auth-input" placeholder="PASSWORD">
+                    <button class="password-toggle" onclick="togglePasswordVisibility()" type="button">
+                        👁️
+                    </button>
+                </div>
+                <p style="font-size:0.6rem; color:#aaa; margin-bottom:10px;" id="auth-note"></p>
+                <div id="auth-error"></div>
+                <button class="btn-action" id="auth-submit" onclick="handleAuthSubmit()">ACCESS MAINFRAME</button>
+                
+                <!-- Reset Password Link -->
+                <a class="reset-password-link" onclick="switchAuthMode('reset')">
+                    FORGOT PASSWORD?
+                </a>
+            </div>
+
+            <!-- Reset Password Form (Hidden by default) -->
+            <div id="reset-password-form" style="display:none;">
+                <input type="email" id="reset-email" class="auth-input" placeholder="ENTER YOUR EMAIL ADDRESS">
+                <p style="font-size:0.6rem; color:#aaa; margin-bottom:10px;">
+                    Enter your email address to receive a password reset link.
+                </p>
+                <div id="reset-error" style="color:var(--error); font-size:0.7rem; margin-top:10px;"></div>
+                <button class="btn-action" id="reset-submit" onclick="handlePasswordReset()">SEND RESET LINK</button>
+                
+                <!-- Back to Login Link -->
+                <a class="back-to-login" onclick="switchAuthMode('login')">
+                    ← BACK TO LOGIN
+                </a>
+            </div>
+
+            <!-- Success Message (Hidden by default) -->
+            <div id="reset-success" style="display:none;">
+                <p style="font-size:0.8rem; color:var(--neon); margin:15px 0;">
+                    ✅ Reset link sent! Check your email.
+                </p>
+                <a class="back-to-login" onclick="switchAuthMode('login')">
+                    ← BACK TO LOGIN
+                </a>
+            </div>
+
             <button class="btn-action" id="auth-logout" style="display:none; background:#ff3939; color:#fff;" onclick="handleLogout()">DISCONNECT SESSION</button>
         </div>
     </div>
@@ -362,7 +447,18 @@
     let chat = { messages: [], unreadCount: 0, isOpen: true, currentTab: null };
     let boostAnimInterval = null;
     let lastTick = Date.now();
-    let authMode = 'login'; // login or register
+    let authMode = 'login'; // login, register, or reset
+    let passwordVisible = false;
+
+    // Toggle password visibility
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('auth-pass');
+        const toggleButton = document.querySelector('.password-toggle');
+        
+        passwordVisible = !passwordVisible;
+        passwordInput.type = passwordVisible ? 'text' : 'password';
+        toggleButton.textContent = passwordVisible ? '🙈' : '👁️';
+    }
 
     // Improved wallet detection
     function detectWalletProvider() {
@@ -431,11 +527,45 @@
 
     function switchAuthMode(mode) {
         authMode = mode;
+        
+        // Reset all tabs
         document.getElementById('tab-login').className = mode === 'login' ? 'auth-tab active' : 'auth-tab';
         document.getElementById('tab-register').className = mode === 'register' ? 'auth-tab active' : 'auth-tab';
-        document.getElementById('auth-submit').innerText = mode === 'login' ? 'ACCESS MAINFRAME' : 'CREATE IDENTITY';
-        document.getElementById('auth-note').innerText = mode === 'register' ? 'NOTE: SAVING REGISTERS CURRENT PROGRESS.' : '';
+        document.getElementById('tab-reset').className = mode === 'reset' ? 'auth-tab active' : 'auth-tab';
+        
+        // Clear error messages
         document.getElementById('auth-error').innerText = '';
+        document.getElementById('reset-error').innerText = '';
+        
+        // Show/hide forms based on mode
+        const loginRegisterForm = document.getElementById('login-register-form');
+        const resetPasswordForm = document.getElementById('reset-password-form');
+        const resetSuccess = document.getElementById('reset-success');
+        
+        if (mode === 'reset') {
+            loginRegisterForm.style.display = 'none';
+            resetPasswordForm.style.display = 'block';
+            resetSuccess.style.display = 'none';
+            document.getElementById('auth-submit').innerText = 'SEND RESET LINK';
+            document.getElementById('auth-note').innerText = '';
+        } else {
+            loginRegisterForm.style.display = 'block';
+            resetPasswordForm.style.display = 'none';
+            resetSuccess.style.display = 'none';
+            
+            if (mode === 'login') {
+                document.getElementById('auth-submit').innerText = 'ACCESS MAINFRAME';
+                document.getElementById('auth-note').innerText = '';
+            } else if (mode === 'register') {
+                document.getElementById('auth-submit').innerText = 'CREATE IDENTITY';
+                document.getElementById('auth-note').innerText = 'NOTE: SAVING REGISTERS CURRENT PROGRESS.';
+            }
+        }
+        
+        // Reset password field visibility
+        if (passwordVisible) {
+            togglePasswordVisibility(); // Reset to hidden
+        }
     }
 
     function checkAuthUI() {
@@ -451,10 +581,18 @@
             document.querySelector('.htp-sub').innerText = "SECURE LOGIN";
             document.getElementById('auth-status-btn').innerText = "[ ANONYMOUS ]";
             document.getElementById('auth-status-btn').style.borderColor = "#888";
+            
+            // Reset to login mode when opening auth
+            switchAuthMode('login');
         }
     }
 
     async function handleAuthSubmit() {
+        if (authMode === 'reset') {
+            handlePasswordReset();
+            return;
+        }
+        
         const email = document.getElementById('auth-email').value;
         const pass = document.getElementById('auth-pass').value;
         const errDiv = document.getElementById('auth-error');
@@ -512,6 +650,37 @@
                 setTimeout(() => document.getElementById('auth-overlay').style.display = 'none', 1000);
                 checkAuthUI();
             }
+        }
+    }
+
+    async function handlePasswordReset() {
+        const email = document.getElementById('reset-email').value;
+        const errDiv = document.getElementById('reset-error');
+        const resetSuccess = document.getElementById('reset-success');
+        const resetPasswordForm = document.getElementById('reset-password-form');
+        
+        if (!email) { 
+            errDiv.innerText = "Please enter your email address."; 
+            return; 
+        }
+        
+        errDiv.innerText = "Sending reset link...";
+        
+        // Supabase password reset
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/reset-password.html', // You can create this page if needed
+        });
+        
+        if (error) {
+            errDiv.innerText = error.message;
+        } else {
+            // Show success message
+            resetPasswordForm.style.display = 'none';
+            resetSuccess.style.display = 'block';
+            errDiv.innerText = '';
+            
+            // Clear the email field
+            document.getElementById('reset-email').value = '';
         }
     }
 
