@@ -159,6 +159,7 @@
                 <li><code>!upgrades</code> - Passive income sources.</li>
                 <li><code>!stake</code> - Earn <b>News Yield</b> on deposits.</li>
                 <li><code>!prestige</code> - Permanent <b>👑 Bruh</b> multipliers.</li>
+                <li><code>!premium</code> - Buy/Restore Bruh upgrades.</li>
                 <li><code>!rank</code> - Global leaderboard.</li>
                 <li><code>!stats</code> - Lifetime progress and Alias change.</li>
                 <li><code>!close</code> - Return to stack.</li>
@@ -233,7 +234,7 @@
     <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT (24H LOG)</span><span id="chat-toggle-icon">▼</span></div>
     <div id="chat-log"></div>
     <div class="chat-input-area">
-        <div class="command-hints">TYPE !upgrades !rank !stats !stake !prestige !close</div>
+        <div class="command-hints">TYPE !upgrades !rank !stats !stake !prestige !premium !close</div>
         <div class="chat-input-container">
             <input type="text" id="chat-input" placeholder="Broadcast message or !command..." maxlength="100">
             <button id="chat-send" onclick="handleInput()">EXEC</button>
@@ -491,6 +492,12 @@
         if (n > 0) { game.new -= totalCost; u.count += n; game.autoNew += (u.power * n); renderTab('!upgrades'); updateUI(); }
     }
 
+    async function restorePurchases() {
+        await loadCloud();
+        alert('Cloud save synced. If your Player ID is correct, purchases are restored.');
+        updateUI();
+    }
+
     function renderTab(cmd) {
         const div = document.getElementById('tab-content');
         if (cmd === '!upgrades') {
@@ -518,7 +525,7 @@
                 div.innerHTML = html + '</table>';
             });
         } else if (cmd === '!premium') {
-            div.innerHTML = `<div class="invest-stat" style="text-align:center;"><p>Support the project and increase your permanent multiplier!</p><div id="paypal-button-container" style="margin-top:15px; display:flex; justify-content:center;"></div><p style="margin-top:10px; font-weight:bold; color:var(--neon);">Buy x5 Bruh for £ 0.99</p></div>`;
+            div.innerHTML = `<div style="text-align:center; margin-bottom:15px;"><button class="btn-action" style="background:#000; color:var(--neon); border:1px solid var(--neon); width:auto; padding:5px 15px; font-size:0.6rem;" onclick="restorePurchases()">RESTORE PURCHASES</button></div><div class="invest-stat" style="text-align:center;"><p>Support the project and increase your permanent multiplier!</p><div id="paypal-button-container" style="margin-top:15px; display:flex; justify-content:center;"></div><p style="margin-top:10px; font-weight:bold; color:var(--neon);">Buy x5 Bruh for £ 0.99</p></div>`;
             if (window.paypal) {
                 window.paypal.Buttons({
                     style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'paypal' },
