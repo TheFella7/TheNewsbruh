@@ -93,7 +93,21 @@
         .auth-tab { cursor: pointer; opacity: 0.5; border-bottom: 1px solid transparent; }
         .auth-tab.active { opacity: 1; border-bottom: 1px solid var(--neon); font-weight: bold; }
         #auth-error { color: var(--error); font-size: 0.7rem; margin-top: 10px; min-height: 15px; text-shadow: none; }
-        .auth-status { font-size: 0.6rem; color: var(--neon); border: 1px solid var(--neon); padding: 3px 6px; cursor: pointer; margin-right: 5px;}
+        .auth-status { 
+            font-size: 0.6rem; 
+            color: var(--neon); 
+            border: 1px solid var(--neon); 
+            padding: 3px 6px; 
+            cursor: pointer; 
+            margin-right: 5px;
+            background: rgba(57, 255, 20, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .auth-status:hover {
+            background: rgba(57, 255, 20, 0.1);
+            box-shadow: 0 0 5px var(--neon-dim);
+        }
 
         /* Reset Password Link */
         .reset-password-link {
@@ -376,8 +390,6 @@
                     ← BACK TO LOGIN
                 </a>
             </div>
-
-            <button class="btn-action" id="auth-logout" style="display:none; background:#ff3939; color:#fff;" onclick="handleLogout()">DISCONNECT SESSION</button>
         </div>
     </div>
 </div>
@@ -402,7 +414,7 @@
 <div id="header">
     <div class="header-top-row">
         <div style="display:flex; align-items:center;">
-             <div class="auth-status" id="auth-status-btn" onclick="openAuth()">[ ANONYMOUS ]</div>
+             <div class="auth-status" id="auth-status-btn" onclick="handleLoggedInClick()">ANONYMOUS</div>
              <div class="global-msg-count">MSG: <span id="msg-total-val">0</span></div>
         </div>
         <div class="chat-indicator" onclick="toggleChat()">
@@ -744,8 +756,25 @@
 
     // --- AUTH LOGIC START ---
     function openAuth() {
-        document.getElementById('auth-overlay').style.display = 'flex';
-        checkAuthUI();
+        if (sessionUser) {
+            // If already logged in, just show the logged in status
+            handleLoggedInClick();
+        } else {
+            document.getElementById('auth-overlay').style.display = 'flex';
+            checkAuthUI();
+        }
+    }
+
+    function handleLoggedInClick() {
+        if (sessionUser) {
+            // Instead of opening the auth modal, show a logout confirmation
+            if (confirm('Do you want to log out?')) {
+                handleLogout();
+            }
+        } else {
+            // If not logged in, open the auth modal
+            openAuth();
+        }
     }
 
     function switchAuthMode(mode) {
@@ -794,19 +823,22 @@
     function checkAuthUI() {
         if(sessionUser) {
             document.getElementById('auth-form').style.display = 'none';
-            document.getElementById('auth-logout').style.display = 'block';
             document.querySelector('.htp-sub').innerText = "LOGGED IN AS: " + sessionUser.email.toUpperCase();
-            document.getElementById('auth-status-btn').innerText = "[ AUTHENTICATED ]";
+            
+            // Changed from "[ AUTHENTICATED ]" to "LOGGED IN"
+            document.getElementById('auth-status-btn').innerText = "LOGGED IN";
             document.getElementById('auth-status-btn').style.borderColor = "var(--neon)";
+            document.getElementById('auth-status-btn').style.color = "var(--neon)";
+            document.getElementById('auth-status-btn').style.background = "rgba(57, 255, 20, 0.1)";
         } else {
             document.getElementById('auth-form').style.display = 'block';
-            document.getElementById('auth-logout').style.display = 'none';
             document.querySelector('.htp-sub').innerText = "SECURE LOGIN";
-            document.getElementById('auth-status-btn').innerText = "[ ANONYMOUS ]";
-            document.getElementById('auth-status-btn').style.borderColor = "#888";
             
-            // Reset to login mode when opening auth
-            switchAuthMode('login');
+            // Changed from "[ ANONYMOUS ]" to "ANONYMOUS"
+            document.getElementById('auth-status-btn').innerText = "ANONYMOUS";
+            document.getElementById('auth-status-btn').style.borderColor = "var(--neon-dim)";
+            document.getElementById('auth-status-btn').style.color = "var(--neon-dim)";
+            document.getElementById('auth-status-btn').style.background = "rgba(57, 255, 20, 0.05)";
         }
     }
 
@@ -908,13 +940,21 @@
     }
 
     async function handleLogout() {
-        await sb.auth.signOut();
-        sessionUser = null;
-        // Generate new Anonymous ID
-        playerUUID = crypto.randomUUID();
-        localStorage.setItem('bruh_uid', playerUUID);
-        // Reset Game locally (Visual only, ideally reload page)
-        location.reload(); 
+        if (confirm('Are you sure you want to log out? Your progress will be saved.')) {
+            await sb.auth.signOut();
+            sessionUser = null;
+            // Keep the same user ID but mark as anonymous
+            // Don't generate a new UUID to preserve progress
+            checkAuthUI();
+            document.getElementById('auth-overlay').style.display = 'none';
+            
+            // Show logout confirmation
+            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            addChatMessage("System", "User logged out. Progress saved.", true, false, timeStr, Date.now());
+            
+            // Save current state before logout
+            await saveCloud();
+        }
     }
     // --- AUTH LOGIC END ---
 
