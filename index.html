@@ -527,68 +527,72 @@
         updateUI();
     }
 
-    // --- ENHANCED CRYPTO LOGIC ---
+    // --- UNIVERSAL WALLET PAY LOGIC ---
     async function payWithPolygon() {
-        // Multi-wallet support: check for any EIP-1193 compatible provider
-        let provider;
-        if (window.ethereum) {
-            provider = new ethers.BrowserProvider(window.ethereum);
-        } else if (window.coinbaseWalletExtension) {
-            provider = new ethers.BrowserProvider(window.coinbaseWalletExtension);
-        } else {
-            return alert("No crypto wallet found. Please install MetaMask, Coinbase Wallet, or Rabby.");
-        }
+        // Detect any injected provider (MetaMask, Coinbase, OKX, etc.)
+        const providerObj = window.ethereum || (window.coinbaseWalletExtension ? window.coinbaseWalletExtension : null);
         
+        if (!providerObj) {
+            return alert("No crypto wallet detected! Please install MetaMask, Coinbase Wallet, OKX, or Trust Wallet.");
+        }
+
         try {
-            const accounts = await provider.send("eth_requestAccounts", []);
-            const signer = await provider.getSigner();
+            const browserProvider = new ethers.BrowserProvider(providerObj);
+            const signer = await browserProvider.getSigner();
             
-            // Ensure Polygon Network (ChainID 137)
-            const network = await provider.getNetwork();
+            // Check for Polygon Mainnet (ChainID 137)
+            const network = await browserProvider.getNetwork();
             if (network.chainId !== 137n) {
                 try {
-                    await provider.send('wallet_switchEthereumChain', [{ chainId: '0x89' }]);
-                } catch (err) {
-                    if (err.code === 4902) {
-                        await provider.send('wallet_addEthereumChain', [{
-                            chainId: '0x89',
-                            chainName: 'Polygon Mainnet',
-                            nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
-                            rpcUrls: ['https://polygon-rpc.com/'],
-                            blockExplorerUrls: ['https://polygonscan.com/']
-                        }]);
+                    await providerObj.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x89' }], 
+                    });
+                } catch (switchError) {
+                    // This error code indicates that the chain has not been added to the wallet.
+                    if (switchError.code === 4902) {
+                        await providerObj.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0x89',
+                                chainName: 'Polygon Mainnet',
+                                rpcUrls: ['https://polygon-rpc.com/'],
+                                nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
+                                blockExplorerUrls: ['https://polygonscan.com/']
+                            }]
+                        });
                     } else {
-                        return alert("Please switch your wallet to the Polygon Mainnet.");
+                        throw switchError;
                     }
                 }
             }
 
-            // Fetch Live Price (Auto-convert £0.99 to POL)
-            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=gbp');
-            const data = await response.json();
-            const maticPriceInGbp = data['matic-network'].gbp;
-            const amountInMatic = (0.99 / maticPriceInGbp).toFixed(4);
+            // Fetch Live Price for £0.99 in POL/MATIC
+            const priceReq = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=gbp');
+            const priceData = await priceReq.json();
+            const polPrice = priceData['matic-network'].gbp;
+            const amountToPay = (0.99 / polPrice).toFixed(6);
 
             const tx = await signer.sendTransaction({
                 to: CRYPTO_WALLET,
-                value: ethers.parseEther(amountInMatic)
+                value: ethers.parseEther(amountToPay)
             });
 
-            alert(`Broadcasted to Network via ${accounts[0].substring(0,6)}... Waiting for confirmation.`);
+            alert(`Transaction broadcasted! Hash: ${tx.hash.substring(0, 10)}... Waiting for confirmation.`);
+            
             const receipt = await tx.wait();
-
             if (receipt.status === 1) {
                 game.bruh += 5;
                 saveCloud();
                 updateUI();
                 const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                addChatMessage("System", `NETWORK TRANSACTION: +5 BRUH BY ${game.playerName}!`, true, true, timeStr, Date.now());
-                alert('Success! Upgrade deployed via Polygon Network.');
+                addChatMessage("System", `CRYPTO PURCHASE SUCCESS: +5 BRUH BY ${game.playerName}!`, true, true, timeStr, Date.now());
+                alert('Success! +5 Bruh added via Polygon.');
                 renderTab('!premium');
             }
         } catch (e) {
             console.error(e);
-            alert("Transaction interrupted or cancelled.");
+            alert("Payment failed or was rejected. Ensure you have enough POL on Polygon.");
         }
     }
 
@@ -637,9 +641,9 @@
             <div class="invest-stat" style="text-align:center;">
                 <p>Support the project (+5 permanent Bruh)</p>
                 <div id="paypal-button-container" style="margin-top:15px;"></div>
-                <button class="btn-action" style="background: #8247e5; color: white;" onclick="payWithPolygon()">CONNECT CRYPTO WALLET (POLYGON)</button>
-                <p style="margin-top:10px; font-size: 0.6rem; color: #aaa;">Supported: MetaMask, Coinbase, Rabby, Trust Wallet</p>
-                <p style="margin-top:5px; font-size: 0.5rem; color: var(--neon);">Price: £0.99 (Auto-converted to POL)</p>
+                <button class="btn-action" style="background: #8247e5; color: white;" onclick="payWithPolygon()">PAY WITH WALLET (POLYGON)</button>
+                <p style="margin-top:10px; font-size: 0.6rem; color: #aaa;">Supported: MetaMask, Coinbase, OKX, Trust, Rabby</p>
+                <p style="margin-top:5px; font-size: 0.5rem; color: var(--neon);">Price: £0.99 (Auto-converted to Crypto)</p>
             </div>`;
             if (window.paypal) {
                 window.paypal.Buttons({
