@@ -29,7 +29,7 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* Modal / Popups */
+        /* Modals */
         #how-to-play-overlay, #offline-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 2000;
@@ -40,94 +40,68 @@
             padding: 25px; position: relative; box-shadow: 0 0 30px var(--neon-dim);
             max-height: 85vh; overflow-y: auto; text-align: center;
         }
-        #close-htp, #close-offline {
-            position: absolute; top: 10px; right: 15px; font-size: 1.8rem;
-            cursor: pointer; font-weight: bold; color: var(--neon); text-shadow: 0 0 10px var(--neon);
-        }
-        .htp-header { font-family: var(--old-english); font-size: 2.2rem; text-align: center; margin-bottom: 5px; color: var(--neon); }
-        .htp-sub { font-size: 0.6rem; text-align: center; margin-bottom: 20px; letter-spacing: 2px; opacity: 0.8; }
+        #close-htp { position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: var(--neon); }
+        .htp-header { font-family: var(--old-english); font-size: 2.2rem; margin-bottom: 5px; color: var(--neon); }
+        .htp-sub { font-size: 0.6rem; margin-bottom: 20px; letter-spacing: 2px; opacity: 0.8; }
         .htp-section-title { font-size: 0.75rem; font-weight: bold; color: #fff; background: var(--neon-dim); padding: 4px 8px; margin: 15px 0 10px 0; display: inline-block; }
-        .htp-content { font-size: 0.75rem; line-height: 1.5; color: #eee; }
-        .htp-content b { color: var(--neon); }
-        .cmd-list { list-style: none; }
-        .cmd-list li { margin-bottom: 10px; padding-left: 10px; border-left: 1px solid var(--neon-dim); }
-        .cmd-list code { color: var(--neon); font-weight: bold; font-size: 0.85rem; }
-
-        #save-status {
-            position: absolute; top: 10px; right: 10px; font-size: 0.6rem;
-            color: var(--neon); opacity: 0; transition: opacity 0.5s; z-index: 1000;
-        }
+        .htp-content { font-size: 0.75rem; line-height: 1.5; color: #eee; text-align: left; }
+        
+        #save-status { position: absolute; top: 10px; right: 10px; font-size: 0.6rem; color: var(--neon); opacity: 0; transition: opacity 0.5s; z-index: 1000; }
 
         #header { border-bottom: 2px solid var(--neon); padding: 10px; text-align: center; background: rgba(0,0,0,0.9); z-index: 10; position: relative; }
         .header-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .global-msg-count { font-size: 0.55rem; color: var(--neon); border: 1px solid var(--neon-dim); padding: 2px 5px; background: rgba(57, 255, 20, 0.05); }
-        .chat-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.6rem; color: var(--neon); cursor: pointer; padding: 5px; }
-        .chat-badge { background: var(--neon); color: #000; border-radius: 10px; padding: 2px 6px; font-weight: bold; font-size: 0.5rem; min-width: 16px; text-align: center; box-shadow: 0 0 5px var(--neon); }
+        .global-msg-count { font-size: 0.55rem; color: var(--neon); border: 1px solid var(--neon-dim); padding: 2px 5px; }
+        .chat-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.6rem; cursor: pointer; }
+        .chat-badge { background: var(--neon); color: #000; border-radius: 10px; padding: 2px 6px; font-weight: bold; font-size: 0.5rem; }
         .chat-badge.hidden { display: none; }
         
-        h1 { font-family: var(--old-english); font-size: clamp(1.8rem, 6vw, 3rem); color: var(--neon); text-shadow: 0 0 15px var(--neon); margin: 2px 0; }
-        .network-stats { font-size: 0.6rem; color: var(--neon); margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+        h1 { font-family: var(--old-english); font-size: clamp(1.8rem, 6vw, 3rem); color: var(--neon); margin: 2px 0; }
+        .network-stats { font-size: 0.6rem; color: var(--neon); letter-spacing: 1px; }
 
-        .stats-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 8px; border-bottom: 1px solid var(--neon); background: #050505; font-size: 0.75rem; text-align: left; z-index: 9; }
+        .stats-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 8px; border-bottom: 1px solid var(--neon); background: #050505; font-size: 0.75rem; }
         .stat-item { display: flex; justify-content: space-between; padding: 0 10px; }
 
         #clicker-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; }
         #emoji-stack { position: relative; width: 150px; height: 150px; }
-        .paper-emoji { position: absolute; font-size: 70px; display: none; filter: drop-shadow(0 0 8px var(--neon)); transition: all 0.3s ease; }
-        #p1, #p2, #p3, #p4, #p5, #p6, #p7, #p8, #p9 { position: absolute; font-size: 70px; display: none; }
-        #p1 { top: 0; left: 0; transform: rotate(-5deg); }
-        #p2 { top: 5px; left: 25px; transform: rotate(10deg); }
-        #p3 { top: 10px; left: 50px; transform: rotate(-8deg); }
-        #p4 { top: 30px; left: -5px; transform: rotate(15deg); }
-        #p5 { top: 35px; left: 20px; transform: rotate(2deg); }
-        #p6 { top: 40px; left: 55px; transform: rotate(-12deg); }
-        #p7 { top: 55px; left: 5px; transform: rotate(7deg); }
-        #p8 { top: 60px; left: 30px; transform: rotate(-3deg); }
-        #p9 { top: 70px; left: 50px; transform: rotate(20deg); }
+        .paper-emoji { position: absolute; font-size: 70px; display: none; filter: drop-shadow(0 0 8px var(--neon)); }
+        
+        #p1 { top: 0; left: 0; display: block; } #p2 { top: 5px; left: 25px; } #p3 { top: 10px; left: 50px; }
+        #p4 { top: 30px; left: -5px; } #p5 { top: 35px; left: 20px; } #p6 { top: 40px; left: 55px; }
+        #p7 { top: 55px; left: 5px; } #p8 { top: 60px; left: 30px; } #p9 { top: 70px; left: 50px; }
 
-        .falling-paper {
-            position: fixed; top: -50px; font-size: 24px; pointer-events: none; z-index: 1;
-            filter: drop-shadow(0 0 5px var(--neon-dim)); animation: fall linear forwards;
-        }
+        .falling-paper { position: fixed; top: -50px; font-size: 24px; pointer-events: none; z-index: 1; animation: fall linear forwards; }
         @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
 
         .boost-control { margin-top: 20px; z-index: 100; text-align: center; }
-        .btn-boost { background: var(--neon); color: #000; border: none; padding: 12px 24px; font-family: var(--mono); font-weight: bold; cursor: pointer; box-shadow: 0 0 15px var(--neon); }
-        .btn-boost:disabled { background: #000; color: var(--neon-dim); box-shadow: none; cursor: not-allowed; border: 1px solid var(--neon-dim); }
-        #boost-timer-display { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
-        
-        #nps-display { font-size: 0.9rem; color: var(--neon); margin-top: 10px; font-weight: bold; text-shadow: 0 0 5px var(--neon-dim); }
+        .btn-boost { background: var(--neon); color: #000; border: none; padding: 12px 24px; font-family: var(--mono); font-weight: bold; cursor: pointer; }
+        .btn-boost:disabled { background: #000; color: var(--neon-dim); border: 1px solid var(--neon-dim); }
+        #boost-timer-display { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; }
+        #nps-display { font-size: 0.9rem; color: var(--neon); margin-top: 10px; font-weight: bold; }
 
-        .floating-text { position: absolute; color: var(--neon); font-weight: bold; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 101; white-space: nowrap; }
+        .floating-text { position: absolute; color: var(--neon); font-weight: bold; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 101; }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
 
         #tab-container { flex-grow: 1; padding: 20px; overflow-y: auto; display: none; border: 2px solid var(--neon); margin: 15px; background: rgba(0,0,0,0.95); z-index: 20; }
-        #tab-title { text-transform: capitalize; font-family: var(--old-english); border-bottom: 1px solid var(--neon); margin-bottom: 15px; font-size: 1.5rem; }
+        #tab-title { text-transform: capitalize; font-family: var(--old-english); border-bottom: 1px solid var(--neon); margin-bottom: 15px; }
         .active-tab { display: block !important; }
 
         #chat-container { display: flex; flex-direction: column; height: 280px; border-top: 2px solid var(--neon); background: #000; z-index: 50; }
-        .chat-toggle { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: rgba(57, 255, 20, 0.1); cursor: pointer; border-bottom: 1px solid var(--neon-dim); font-size: 0.7rem; font-weight: bold; }
+        .chat-toggle { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: rgba(57, 255, 20, 0.1); cursor: pointer; border-bottom: 1px solid var(--neon-dim); font-size: 0.7rem; }
         #chat-log { flex-grow: 1; overflow-y: auto; padding: 10px 15px; display: flex; flex-direction: column; gap: 8px; font-size: 0.75rem; }
-        .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; position: relative; }
+        .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); position: relative; }
         .chat-time { position: absolute; right: 10px; top: 6px; font-size: 0.55rem; opacity: 0.6; }
         .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
-        .command-hints { font-size: 0.55rem; margin-bottom: 5px; color: #FFFFFF; font-weight: bold; text-align: center; letter-spacing: 0.5px; }
         .chat-input-container { display: flex; }
-        #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: var(--mono); font-size: 0.85rem; outline: none; }
+        #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: var(--mono); outline: none; }
         #chat-send { background: var(--neon); color: #000; border: none; padding: 0 20px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
 
-        .upgrade-row { border: 1px solid var(--neon); margin-bottom: 10px; padding: 10px; background: rgba(57, 255, 20, 0.02); }
+        .upgrade-row { border: 1px solid var(--neon); margin-bottom: 10px; padding: 10px; }
         .upgrade-info { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 10px; }
-        .upgrade-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-upgrade { background: var(--neon); color: #000; border: none; padding: 8px; font-family: var(--mono); font-weight: bold; cursor: pointer; font-size: 0.7rem; }
-        .btn-upgrade:disabled { opacity: 0.3; cursor: not-allowed; border: 1px solid var(--neon-dim); background: #000; color: var(--neon-dim); }
-        
+        .btn-upgrade { background: var(--neon); color: #000; border: none; padding: 8px; font-family: var(--mono); font-weight: bold; cursor: pointer; }
+        .btn-upgrade:disabled { opacity: 0.3; background: #000; color: var(--neon-dim); border: 1px solid var(--neon-dim); }
         .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
-        .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
-        .full-stat-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(57, 255, 20, 0.1); font-size: 0.75rem; }
-
-        .rank-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; margin-top: 10px; }
-        .rank-table th { border-bottom: 1px solid var(--neon); padding: 8px; text-align: left; color: var(--neon); }
+        .rank-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; }
+        .rank-table th { border-bottom: 1px solid var(--neon); padding: 8px; text-align: left; }
         .rank-table td { padding: 8px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
     </style>
 </head>
@@ -137,21 +111,10 @@
     <div id="how-to-play-box">
         <div id="close-htp" onclick="document.getElementById('how-to-play-overlay').style.display='none'">X</div>
         <div class="htp-header">The News Bruh</div>
-        <div class="htp-sub">SYSTEM VERSION 2.4 // NEON_OS</div>
+        <div class="htp-sub">GLOBAL 24H NETWORK</div>
         <div class="htp-content">
-            <div class="htp-section-title">BASICS</div>
-            <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
-            👑 <b>PRESTIGE</b> to earn Bruh for a permanent multiplier.<br>
-            🔥 <b>BOOST</b> auto-triggers at 100% stack for <b>5.0x</b> News.</p>
-            <div class="htp-section-title">TERMINAL COMMANDS</div>
-            <ul class="cmd-list">
-                <li><code>!upgrades</code> - Passive income sources.</li>
-                <li><code>!stake</code> - Earn <b>News Yield</b> on deposits.</li>
-                <li><code>!prestige</code> - Permanent <b>👑 Bruh</b> multipliers.</li>
-                <li><code>!rank</code> - Global leaderboard.</li>
-                <li><code>!stats</code> - Lifetime progress and Alias change.</li>
-                <li><code>!close</code> - Return to stack.</li>
-            </ul>
+            <div class="htp-section-title">COMMANDS</div>
+            <p><code>!upgrades</code> <code>!stake</code> <code>!prestige</code> <code>!rank</code> <code>!stats</code> <code>!close</code></p>
         </div>
     </div>
 </div>
@@ -159,57 +122,43 @@
 <div id="offline-overlay">
     <div id="offline-box">
         <div class="htp-header">Offline Log</div>
-        <div class="htp-sub">WELCOME BACK, BRUH</div>
         <div class="htp-content">
-            <p>You were gone for: <b id="off-time">0h 0m</b></p>
-            <div class="htp-section-title">EARNINGS</div>
-            <p>🗞️ News Generated: <b id="off-news">0</b></p>
-            <p>📈 Staking Yield: <b id="off-stake">0</b></p>
-            <br>
-            <button class="btn-action" onclick="document.getElementById('offline-overlay').style.display='none'">RESUME CIRCULATION</button>
+            <p>Back after: <b id="off-time">0h 0m</b></p>
+            <p>🗞️ News: <b id="off-news">0</b></p>
+            <p>📈 Yield: <b id="off-stake">0</b></p>
+            <button class="btn-action" onclick="document.getElementById('offline-overlay').style.display='none'">COLLECT</button>
         </div>
     </div>
 </div>
 
-<div id="save-status">CLOUD SAVED</div>
+<div id="save-status">SAVED</div>
 
 <div id="header">
     <div class="header-top-row">
-        <div class="global-msg-count">MSG SENT: <span id="msg-total-val">0</span></div>
-        <div class="chat-indicator" onclick="toggleChat()">
-            ✉️ <span class="chat-badge hidden" id="unread-count">0</span>
-        </div>
+        <div class="global-msg-count">24H LOG: <span id="msg-total-val">0</span></div>
+        <div class="chat-indicator" onclick="toggleChat()">✉️ <span class="chat-badge hidden" id="unread-count">0</span></div>
     </div>
-    <div class="network-stats">Online: <span id="online-count">1</span> | Total: <span id="total-players">...</span></div>
     <h1>The News Bruh</h1>
+    <div class="network-stats">Online: <span id="online-count">1</span> | Hubs: <span id="total-players">0</span></div>
 </div>
 
 <div class="stats-dashboard">
     <div class="stat-item"><span>🗞️ News:</span> <span id="res-new">0</span></div>
     <div class="stat-item"><span>Lvl:</span> <span id="stat-level">1</span></div>
     <div class="stat-item"><span>👑 Bruh:</span> <span id="res-bruh">0</span></div>
-    <div class="stat-item"><span>Exp:</span> <span><span id="stat-exp">0</span>/<span id="stat-next-exp">100</span></span></div>
     <div class="stat-item"><span>⚡ Mult:</span> <span id="res-mult">1.0</span>x</div>
-    <div class="stat-item"><span>Total Exp:</span> <span id="stat-total-exp">0</span></div>
 </div>
 
 <div id="clicker-area">
     <div id="emoji-stack">
-        <div class="paper-emoji" id="p1" style="display:block">🗞️</div>
-        <div class="paper-emoji" id="p2">🗞️</div>
-        <div class="paper-emoji" id="p3">🗞️</div>
-        <div class="paper-emoji" id="p4">🗞️</div>
-        <div class="paper-emoji" id="p5">🗞️</div>
-        <div class="paper-emoji" id="p6">🗞️</div>
-        <div class="paper-emoji" id="p7">🗞️</div>
-        <div class="paper-emoji" id="p8">🗞️</div>
-        <div class="paper-emoji" id="p9">🗞️</div>
+        <div class="paper-emoji" id="p1">🗞️</div><div class="paper-emoji" id="p2">🗞️</div><div class="paper-emoji" id="p3">🗞️</div>
+        <div class="paper-emoji" id="p4">🗞️</div><div class="paper-emoji" id="p5">🗞️</div><div class="paper-emoji" id="p6">🗞️</div>
+        <div class="paper-emoji" id="p7">🗞️</div><div class="paper-emoji" id="p8">🗞️</div><div class="paper-emoji" id="p9">🗞️</div>
     </div>
     <div class="boost-control">
         <div id="boost-timer-display" style="display:none">Boost: 15.0s</div>
-        <button id="boost-btn" class="btn-boost" onclick="activateBoost(event)" disabled>[ Stack papers ]</button>
+        <button id="boost-btn" class="btn-boost" onclick="activateBoost(event)" disabled>[ Loading... ]</button>
         <div id="nps-display">0.0 Nps</div>
-        <p id="tap-msg" style="margin-top: 15px; font-size: 0.7rem; letter-spacing: 2px;">[ TAP TO CIRCULATE ]</p>
     </div>
 </div>
 
@@ -219,12 +168,11 @@
 </div>
 
 <div id="chat-container">
-    <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT (24H LOG)</span><span id="chat-toggle-icon">▼</span></div>
+    <div class="chat-toggle" onclick="toggleChat()"><span>24-HOUR CHAT LOG</span><span id="chat-toggle-icon">▼</span></div>
     <div id="chat-log"></div>
     <div class="chat-input-area">
-        <div class="command-hints">TYPE !upgrades !rank !stats !stake !prestige !close</div>
         <div class="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Broadcast message or !command..." maxlength="100">
+            <input type="text" id="chat-input" placeholder="Broadcasting to all players..." maxlength="100">
             <button id="chat-send" onclick="handleInput()">EXEC</button>
         </div>
     </div>
@@ -239,12 +187,9 @@
     localStorage.setItem('bruh_uid', playerUUID);
 
     let game = {
-        playerName: "Anonymous", new: 0, totalNew: 0, bruh: 0,
-        level: 1, exp: 0, nextExp: 100, totalExp: 0,
-        clickPower: 1, autoNew: 0, clickCount: 0, totalClicks: 0,
-        boostActive: false, boostCooldown: 0, boostTimeLeft: 0,
-        premiumMult: 1, stakedNews: 0, unclaimedNews: 0,
-        lastSaveTime: Date.now(),
+        playerName: "Anonymous", new: 0, totalNew: 0, bruh: 0, level: 1, exp: 0, nextExp: 100, 
+        autoNew: 0, clickCount: 0, boostActive: false, boostCooldown: 0, boostTimeLeft: 0,
+        premiumMult: 1, stakedNews: 0, unclaimedNews: 0, lastSaveTime: Date.now(),
         upgrades: [
             { id: 0, name: "Neon Paperboy", baseCost: 15, count: 0, power: 1 },
             { id: 1, name: "Laser Press", baseCost: 150, count: 0, power: 12 },
@@ -254,317 +199,220 @@
     };
 
     let chat = { messages: [], unreadCount: 0, isOpen: true, currentTab: null };
-    let boostAnimInterval = null;
 
-    function format(num) {
-        if (num < 1000) return num.toFixed(1);
-        const suffixes = ["k", "m", "b", "t"];
-        let exp = Math.floor(Math.log10(num) / 3);
-        if (exp <= 4) return (num / Math.pow(10, exp * 3)).toFixed(2) + (suffixes[exp - 1] || "");
-        let alphaExp = exp - 5;
-        let suffix = "";
-        let n = alphaExp;
-        while (n >= 0) { suffix = String.fromCharCode(97 + (n % 26)) + suffix; n = Math.floor(n / 26) - 1; }
-        return (num / Math.pow(10, exp * 3)).toFixed(2) + suffix;
+    // --- CHAT CORE LOGIC ---
+    async function loadPersistentChat() {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await sb.from('chat_history')
+            .select('*')
+            .gt('created_at', twentyFourHoursAgo)
+            .order('created_at', { ascending: true });
+
+        if (data) {
+            chat.messages = data.map(d => ({
+                s: d.sender, 
+                m: d.message, 
+                time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            }));
+            renderChat();
+            updateChatHeaderCount();
+        }
     }
 
+    function updateChatHeaderCount() {
+        document.getElementById('msg-total-val').innerText = chat.messages.length;
+    }
+
+    function addChatMessage(s, m, time, isSelf) {
+        // Prevent duplicates from live broadcast + initial fetch
+        const isDup = chat.messages.some(msg => msg.s === s && msg.m === m && msg.time === time);
+        if (!isDup) {
+            chat.messages.push({ s, m, time });
+            // Clean up messages older than 24 hours locally
+            if (chat.messages.length > 1000) chat.messages.shift(); 
+            renderChat();
+            updateChatHeaderCount();
+            if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
+        }
+    }
+
+    async function handleInput() {
+        const input = document.getElementById('chat-input');
+        let val = input.value.trim(); if(!val) return;
+        
+        if (val.startsWith('!')) {
+            handleCommand(val.toLowerCase());
+        } else {
+            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            // 1. Broadcast to all active players
+            globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time: timeStr } });
+            // 2. Save to database for persistence
+            await sb.from('chat_history').insert({ sender: game.playerName, message: val });
+            // 3. Add to local UI
+            addChatMessage(game.playerName, val, timeStr, true);
+        }
+        input.value = '';
+    }
+
+    function renderChat() {
+        const log = document.getElementById('chat-log');
+        log.innerHTML = chat.messages.map(msg => `
+            <div class="chat-message">
+                <span class="chat-time">${msg.time}</span>
+                <b>${msg.s}:</b> ${msg.m}
+            </div>`).join('');
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // --- SUPABASE REALTIME ---
     const globalChannel = sb.channel('global_hub', { config: { presence: { key: playerUUID } } });
     globalChannel
         .on('broadcast', { event: 'chat' }, (payload) => {
-            const isSelf = payload.payload.uid === playerUUID;
-            addChatMessage(payload.payload.user, payload.payload.msg, false, isSelf, payload.payload.time);
-            updateGlobalMsgCount();
+            const p = payload.payload;
+            addChatMessage(p.user, p.msg, p.time, p.uid === playerUUID);
         })
         .on('presence', { event: 'sync' }, () => {
-            const state = globalChannel.presenceState();
-            document.getElementById('online-count').innerText = Object.keys(state).length;
+            document.getElementById('online-count').innerText = Object.keys(globalChannel.presenceState()).length;
         })
         .subscribe(async (status) => {
             if (status === 'SUBSCRIBED') { 
                 await globalChannel.track({ online_at: new Date().toISOString() }); 
-                loadPersistentChat();
-                updateGlobalMsgCount();
+                loadPersistentChat(); // Fetch 24h history on join
             }
         });
 
-    async function loadPersistentChat() {
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data } = await sb.from('chat_history').select('*').gt('created_at', yesterday).order('created_at', { ascending: true });
-        if (data) {
-            chat.messages = data.map(d => ({
-                s: d.sender, m: d.message, sys: false, time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-            }));
-            renderChat();
-        }
-    }
-
-    async function updateGlobalMsgCount() {
-        const { count } = await sb.from('chat_history').select('*', { count: 'exact', head: true });
-        document.getElementById('msg-total-val').innerText = format(count || 0);
+    // --- GAMEPLAY LOGIC ---
+    function format(n) {
+        if (n < 1000) return n.toFixed(1);
+        const s = ["k", "m", "b", "t"];
+        let e = Math.floor(Math.log10(n) / 3);
+        return (n / Math.pow(10, e * 3)).toFixed(2) + (s[e - 1] || "??");
     }
 
     async function saveCloud() {
         game.lastSaveTime = Date.now();
         await sb.from('saves').upsert({ user_uuid: playerUUID, game_data: game, updated_at: new Date() }, { onConflict: 'user_uuid' });
-        const el = document.getElementById('save-status');
-        el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 2000);
-        updateTotalCount();
-    }
-
-    async function updateTotalCount() {
-        const { count } = await sb.from('saves').select('*', { count: 'exact', head: true });
-        document.getElementById('total-players').innerText = format(count || 0);
+        const el = document.getElementById('save-status'); el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 2000);
     }
 
     async function loadCloud() {
         const { data } = await sb.from('saves').select('game_data').eq('user_uuid', playerUUID).single();
         if (data) { 
-            const savedData = data.game_data;
-            const offlineTime = Math.min((Date.now() - savedData.lastSaveTime) / 1000, 43200); // Cap 12h (43200s)
-            
-            Object.assign(game, savedData); 
-            if (isNaN(game.totalExp)) game.totalExp = 0;
-
-            if (offlineTime > 60) {
-                calculateOffline(offlineTime);
-            }
-            updateUI(); 
+            const saved = data.game_data;
+            const offTime = Math.min((Date.now() - saved.lastSaveTime) / 1000, 43200); // Max 12h
+            Object.assign(game, saved);
+            if (offTime > 60) calculateOffline(offTime);
         }
-        updateTotalCount();
-        loadPersistentChat();
+        const { count } = await sb.from('saves').select('*', { count: 'exact', head: true });
+        document.getElementById('total-players').innerText = count || 0;
+        updateUI();
     }
 
-    function calculateOffline(seconds) {
+    function calculateOffline(sec) {
         const mult = (1 + game.bruh) * game.premiumMult;
-        const generated = game.autoNew * mult * seconds;
-        const yield = game.stakedNews * 0.00001 * seconds;
-        
-        game.new += generated;
-        game.unclaimedNews += yield;
-        game.totalNew += generated;
-        addExp(generated * 0.01);
-
-        document.getElementById('off-time').innerText = `${Math.floor(seconds/3600)}h ${Math.floor((seconds%3600)/60)}m`;
-        document.getElementById('off-news').innerText = format(generated);
-        document.getElementById('off-stake').innerText = format(yield);
+        const gen = game.autoNew * mult * sec;
+        const yld = game.stakedNews * 0.00001 * sec;
+        game.new += gen; game.unclaimedNews += yld;
+        document.getElementById('off-time').innerText = `${Math.floor(sec/3600)}h ${Math.floor((sec%3600)/60)}m`;
+        document.getElementById('off-news').innerText = format(gen);
+        document.getElementById('off-stake').innerText = format(yld);
         document.getElementById('offline-overlay').style.display = 'flex';
     }
 
     function getMultiplier() { return (1 + game.bruh) * (game.boostActive ? 5 : 1) * game.premiumMult; }
-    function getPrestigeCost() { return 500000 * Math.pow(5, game.bruh); }
 
     function updateUI() {
         document.getElementById('res-new').innerText = format(game.new);
         document.getElementById('res-bruh').innerText = format(game.bruh);
-        document.getElementById('res-mult').innerText = format(getMultiplier());
-        document.getElementById('stat-level').innerText = format(game.level);
-        document.getElementById('stat-exp').innerText = format(game.exp);
-        document.getElementById('stat-next-exp').innerText = format(game.nextExp);
-        document.getElementById('stat-total-exp').innerText = format(game.totalExp);
+        document.getElementById('res-mult').innerText = format(getMultiplier()) + "x";
+        document.getElementById('stat-level').innerText = game.level;
+        document.getElementById('nps-display').innerText = format(game.autoNew * getMultiplier()) + " Nps";
         
-        let currentNps = game.autoNew * getMultiplier();
-        document.getElementById('nps-display').innerText = `${format(currentNps)} Nps`;
-
-        if (chat.currentTab === '!stake') {
-            const stakeLive = document.getElementById('live-yield-val');
-            if (stakeLive) stakeLive.innerText = format(game.unclaimedNews);
-        }
-        if (chat.currentTab === '!prestige') {
-            const prestigeLive = document.getElementById('live-prestige-cost');
-            if (prestigeLive) prestigeLive.innerText = format(getPrestigeCost());
-        }
-
         const badge = document.getElementById('unread-count');
         if (chat.unreadCount > 0) { badge.innerText = chat.unreadCount; badge.classList.remove('hidden'); }
-        else { badge.classList.add('hidden'); }
+        else badge.classList.add('hidden');
 
         let stack = Math.max(1, Math.min(9, Math.ceil(game.clickCount / 10)));
-        if (game.boostActive) stack = Math.max(1, Math.ceil((game.boostTimeLeft / 15) * 9));
-        for (let i = 1; i <= 9; i++) {
-            const el = document.getElementById('p' + i);
-            if (el) el.style.display = i <= stack ? 'block' : 'none';
-        }
+        for (let i = 1; i <= 9; i++) document.getElementById('p' + i).style.display = i <= stack ? 'block' : 'none';
 
         const btn = document.getElementById('boost-btn');
-        const tmr = document.getElementById('boost-timer-display');
-        
-        if (game.boostActive) { 
-            btn.style.display = 'none'; tmr.style.display = 'block'; 
-            tmr.innerText = `Boost: ${game.boostTimeLeft.toFixed(1)}s`; 
-            if(!boostAnimInterval) startBoostAnimation();
-        }
-        else {
-            btn.style.display = 'inline-block'; tmr.style.display = 'none';
-            stopBoostAnimation();
-            if (game.boostCooldown > 0) { btn.disabled = true; btn.innerText = `Cool: ${Math.ceil(game.boostCooldown)}s`; }
-            else if (game.clickCount < 90) { 
-                btn.disabled = true; 
-                btn.innerText = `Stack: ${Math.floor((game.clickCount/90)*100)}%`; 
-            }
-            else { 
-                activateBoost(); 
-            }
-        }
-    }
-
-    function startBoostAnimation() {
-        boostAnimInterval = setInterval(() => {
-            const paper = document.createElement('div');
-            paper.className = 'falling-paper'; paper.innerText = '🗞️';
-            paper.style.left = Math.random() * 100 + 'vw';
-            paper.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            paper.style.opacity = Math.random() * 0.5 + 0.5;
-            document.body.appendChild(paper);
-            setTimeout(() => paper.remove(), 4000);
-        }, 150);
-    }
-
-    function stopBoostAnimation() { if(boostAnimInterval) { clearInterval(boostAnimInterval); boostAnimInterval = null; } }
-
-    async function handleInput() {
-        const input = document.getElementById('chat-input');
-        let val = input.value.trim(); if(!val) return;
-        if (val.startsWith('!')) {
-            let cmd = val.toLowerCase();
-            const container = document.getElementById('tab-container');
-            const clicker = document.getElementById('clicker-area');
-            if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; chat.currentTab = null; }
-            else if (['!upgrades', '!stake', '!stats', '!rank', '!prestige'].includes(cmd)) {
-                container.classList.add('active-tab'); clicker.style.display = 'none';
-                document.getElementById('tab-title').innerText = cmd === '!rank' ? "Leaderboard" : (cmd === '!stake' ? "Invest & Earn News" : cmd.substring(1));
-                chat.currentTab = cmd;
-                renderTab(cmd);
-            }
+        if (game.boostActive) {
+            btn.style.display = 'none';
+            document.getElementById('boost-timer-display').style.display = 'block';
+            document.getElementById('boost-timer-display').innerText = `BOOST: ${game.boostTimeLeft.toFixed(1)}s`;
         } else {
-            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time: timeStr } });
-            await sb.from('chat_history').insert({ sender: game.playerName, message: val });
-            addChatMessage(game.playerName, val, false, true, timeStr);
-            updateGlobalMsgCount();
+            btn.style.display = 'inline-block';
+            document.getElementById('boost-timer-display').style.display = 'none';
+            btn.disabled = game.clickCount < 90;
+            btn.innerText = game.clickCount < 90 ? `STACK: ${Math.floor((game.clickCount/90)*100)}%` : "ACTIVATE BOOST";
         }
-        input.value = '';
     }
 
-    function getUpgradeNextCost(u) { return Math.floor(u.baseCost * Math.pow(1.15, u.count)); }
-
-    function buyMaxUpgrades(u) {
-        let b = game.new; let r = 1.15; let c = getUpgradeNextCost(u);
-        if (b < c) return;
-        let n = Math.floor(Math.log(1 - (b * (1 - r) / c)) / Math.log(r));
-        if (n <= 0) n = 1;
-        let totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
-        while (totalCost > b && n > 0) { n--; totalCost = c * (1 - Math.pow(r, n)) / (1 - r); }
-        if (n > 0) { game.new -= totalCost; u.count += n; game.autoNew += (u.power * n); renderTab('!upgrades'); updateUI(); }
+    function handleCommand(cmd) {
+        const container = document.getElementById('tab-container');
+        const clicker = document.getElementById('clicker-area');
+        if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; return; }
+        
+        container.classList.add('active-tab'); clicker.style.display = 'none';
+        document.getElementById('tab-title').innerText = cmd.substring(1);
+        renderTab(cmd);
     }
 
     function renderTab(cmd) {
         const div = document.getElementById('tab-content');
         if (cmd === '!upgrades') {
-            div.innerHTML = '';
-            game.upgrades.forEach(u => {
-                let cost = getUpgradeNextCost(u);
-                let canAfford = game.new >= cost;
-                let row = document.createElement('div');
-                row.className = 'upgrade-row';
-                row.innerHTML = `<div class="upgrade-info"><span><b>${u.name}</b> (Lv.${format(u.count)})</span><span>+${format(u.power)}/s</span></div><div class="upgrade-btns"><button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button><button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyMaxUpgrades(game.upgrades[${u.id}])">BUY MAX</button></div>`;
-                div.appendChild(row);
-            });
+            div.innerHTML = game.upgrades.map(u => {
+                let cost = Math.floor(u.baseCost * Math.pow(1.15, u.count));
+                return `<div class="upgrade-row"><div class="upgrade-info"><b>${u.name}</b> (Lv.${u.count})<span>+${u.power}/s</span></div>
+                <button class="btn-upgrade" ${game.new < cost ? 'disabled' : ''} onclick="buyUp(${u.id})">BUY: ${format(cost)}</button></div>`;
+            }).join('');
         } else if (cmd === '!stake') {
-            div.innerHTML = `<div class="invest-stat"><p>Invested: <b>${format(game.stakedNews)}</b></p><p style="font-size: 0.6rem; color: #FFFFFF;">Rate: 0.00001 News / Staked New</p><p>Unclaimed Yield: <b id="live-yield-val">${format(game.unclaimedNews)}</b></p></div><button class="btn-action" onclick="investAll()">INVEST ALL</button><button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button><button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM NEWS YIELD</button>`;
-        } else if (cmd === '!prestige') {
-            let cost = getPrestigeCost();
-            div.innerHTML = `<div class="invest-stat"><p>Current Bruh: <b>${format(game.bruh)}</b></p><p>Perm Multiplier: <b>${format(game.bruh+1)}x</b></p><p>Next Level Cost: <b id="live-prestige-cost">${format(cost)}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
-        } else if (cmd === '!stats') {
-            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Current Multiplier:</span> <b>${format(game.bruh+1)}x</b></div><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button></div>`;
+            div.innerHTML = `<div class="upgrade-row"><p>Staked: ${format(game.stakedNews)}</p><p>Yield: ${format(game.unclaimedNews)}</p></div>
+            <button class="btn-action" onclick="game.stakedNews+=game.new; game.new=0; renderTab('!stake')">STAKE ALL</button>
+            <button class="btn-action" onclick="game.new+=game.unclaimedNews; game.unclaimedNews=0; renderTab('!stake')">CLAIM YIELD</button>`;
         } else if (cmd === '!rank') {
-            div.innerHTML = 'Loading Leaderboard...';
-            sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(10).then(({data}) => {
-                let html = '<table class="rank-table"><tr><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
-                if(data) data.forEach(d => { let p = d.game_data; html += `<tr><td>${p.playerName || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; });
-                div.innerHTML = html + '</table>';
+            div.innerHTML = 'Fetching Hubs...';
+            sb.from('saves').select('game_data').order('game_data->level', {ascending:false}).limit(5).then(({data}) => {
+                div.innerHTML = '<table class="rank-table"><tr><th>NAME</th><th>LVL</th><th>BRUH</th></tr>' + 
+                data.map(d => `<tr><td>${d.game_data.playerName}</td><td>${d.game_data.level}</td><td>${d.game_data.bruh}</td></tr>`).join('') + '</table>';
             });
         }
     }
 
-    function buyUpgrade(id) {
-        const u = game.upgrades.find(x => x.id === id);
-        const cost = getUpgradeNextCost(u);
+    function buyUp(id) {
+        const u = game.upgrades[id];
+        const cost = Math.floor(u.baseCost * Math.pow(1.15, u.count));
         if (game.new >= cost) { game.new -= cost; u.count++; game.autoNew += u.power; renderTab('!upgrades'); updateUI(); }
     }
 
-    function buyAllBruh() {
-        let count = 0; while (game.new >= getPrestigeCost()) { game.new -= getPrestigeCost(); game.bruh++; count++; }
-        if (count > 0) {
-            game.new = 0; game.level = 1; game.exp = 0; game.nextExp = 100; game.autoNew = 0; 
-            game.upgrades.forEach(u => u.count = 0);
-            addChatMessage("System", `PRESTIGED! Multiplier is now ${format(game.bruh+1)}x!`, true, true, new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
-            renderTab('!prestige'); updateUI(); saveCloud();
-        }
-    }
-
-    function investAll() { game.stakedNews += game.new; game.new = 0; renderTab('!stake'); }
-    function unstakeAll() { game.new += game.stakedNews; game.stakedNews = 0; renderTab('!stake'); }
-    function claimYield() { game.new += game.unclaimedNews; game.unclaimedNews = 0; renderTab('!stake'); updateUI(); }
-
-    function toggleChat() { 
-        chat.isOpen = !chat.isOpen; 
-        document.getElementById('chat-log').style.display = chat.isOpen ? 'flex' : 'none';
-        document.querySelector('.chat-input-area').style.display = chat.isOpen ? 'block' : 'none';
-        document.getElementById('chat-container').style.height = chat.isOpen ? '280px' : '40px';
-        if (chat.isOpen) chat.unreadCount = 0; updateUI(); 
-    }
-
-    function addChatMessage(s, m, isSystem, isSelf, time) {
-        const isDuplicate = chat.messages.some(msg => msg.s === s && msg.m === m && msg.time === time);
-        if (!isDuplicate) {
-            chat.messages.push({ s, m, sys: isSystem, time: time || "00:00" });
-            if (chat.messages.length > 500) chat.messages.shift();
-            renderChat();
-            if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
-        }
-    }
-
-    function renderChat() {
-        const log = document.getElementById('chat-log');
-        log.innerHTML = chat.messages.map(msg => `<div class="chat-message"><span class="chat-time">${msg.time}</span><b>${msg.s}:</b> ${msg.m}</div>`).join('');
-        log.scrollTop = log.scrollHeight;
-    }
+    function toggleChat() { chat.isOpen = !chat.isOpen; document.getElementById('chat-container').style.height = chat.isOpen ? '280px' : '40px'; if(chat.isOpen) chat.unreadCount = 0; updateUI(); }
 
     document.getElementById('clicker-area').onmousedown = (e) => {
-        if(e.target.id === 'boost-btn') return;
-        if (!game.boostActive && game.clickCount < 90) game.clickCount += 2;
-        if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
-        let m = getMultiplier(); let gain = 1 * m;
-        game.new += gain; game.totalNew += gain; addExp(gain * 0.05);
+        if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.2);
+        else game.clickCount = Math.min(90, game.clickCount + 2);
+        let gain = 1 * getMultiplier(); game.new += gain;
         const f = document.createElement('div'); f.className = 'floating-text'; f.innerText = `+${format(gain)}`;
         f.style.left = e.clientX + 'px'; f.style.top = e.clientY + 'px';
         document.body.appendChild(f); setTimeout(() => f.remove(), 800);
         updateUI();
     };
 
-    function addExp(amount) {
-        game.exp += amount; game.totalExp += amount;
-        while (game.exp >= game.nextExp) { game.exp -= game.nextExp; game.level++; game.nextExp *= 1.5; }
-    }
-
-    function activateBoost(e) { if(e) e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; updateUI(); }
+    function activateBoost() { game.boostActive = true; game.boostTimeLeft = 15; updateUI(); }
 
     setInterval(() => {
-        let m = getMultiplier(); 
-        let gain = (game.autoNew / 10) * m;
-        if (gain > 0) { game.new += gain; game.totalNew += gain; addExp(gain * 0.01); }
+        let gain = (game.autoNew / 10) * getMultiplier();
+        game.new += gain;
         if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.00001 / 10);
         if (game.boostActive) {
             game.boostTimeLeft -= 0.1;
-            if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
-        } else if (game.clickCount > 0) { game.clickCount -= 0.2; }
-        if (game.boostCooldown > 0) game.boostCooldown -= 0.1;
+            if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; }
+        } else if (game.clickCount > 0) game.clickCount -= 0.1;
         updateUI();
     }, 100);
 
     setInterval(saveCloud, 15000);
     window.onload = loadCloud;
-    document.getElementById('chat-input').onkeypress = (e) => { if (e.key === 'Enter') handleInput(); };
+    document.getElementById('chat-input').onkeypress = (e) => { if(e.key === 'Enter') handleInput(); };
 </script>
 </body>
 </html>
