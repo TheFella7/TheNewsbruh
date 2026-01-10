@@ -674,8 +674,20 @@
 
     document.getElementById('clicker-area').onmousedown = (e) => {
         if(e.target.id === 'boost-btn') return;
-        if (!game.boostActive && game.clickCount < 90) game.clickCount += 2;
-        if (game.boostActive) game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
+        
+        // Handle clicking and Auto-Boost logic
+        if (!game.boostActive) {
+            if (game.clickCount < 90) game.clickCount += 2;
+            
+            // Check for Auto-Activate (100% Stack + No Cooldown)
+            if (game.clickCount >= 90 && game.boostCooldown <= 0) {
+                activateBoost();
+            }
+        } else {
+            // Logic for extending boost while it's active
+            game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
+        }
+
         let m = getMultiplier(); let gain = 1 * m;
         game.new += gain; game.totalNew += gain; addExp(gain * 0.05);
         const f = document.createElement('div'); f.className = 'floating-text'; f.innerText = `+${format(gain)}`;
