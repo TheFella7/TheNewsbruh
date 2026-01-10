@@ -112,11 +112,10 @@
         .chat-time { position: absolute; right: 10px; top: 6px; font-size: 0.55rem; opacity: 0.6; }
         .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
         
-        /* UPDATED HINTS STYLE */
         .command-hints { 
             font-size: 0.75rem; 
             margin-bottom: 8px; 
-            color: #FFFFFF; /* CHANGED TO WHITE */
+            color: #FFFFFF; 
             font-weight: bold; 
             text-align: center; 
             letter-spacing: 0px; 
@@ -456,9 +455,15 @@
             const container = document.getElementById('tab-container');
             const clicker = document.getElementById('clicker-area');
             if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; chat.currentTab = null; }
-            else if (['!upgrades', '!stake', '!stats', '!rank', '!prestige'].includes(cmd)) {
+            else if (['!upgrades', '!stake', '!stats', '!rank', '!prestige', '!premium'].includes(cmd)) {
                 container.classList.add('active-tab'); clicker.style.display = 'none';
-                document.getElementById('tab-title').innerText = cmd === '!rank' ? "Leaderboard" : (cmd === '!stake' ? "Invest & Earn News" : cmd.substring(1));
+                
+                let title = cmd.substring(1);
+                if (cmd === '!rank') title = "Leaderboard";
+                if (cmd === '!stake') title = "Invest & Earn News";
+                if (cmd === '!premium') title = "Buy Bruh";
+                
+                document.getElementById('tab-title').innerText = title;
                 chat.currentTab = cmd;
                 renderTab(cmd);
             }
@@ -511,6 +516,8 @@
                 if(data) data.forEach(d => { let p = d.game_data; html += `<tr><td>${p.playerName || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; });
                 div.innerHTML = html + '</table>';
             });
+        } else if (cmd === '!premium') {
+            div.innerHTML = `<div class="invest-stat"><p style="text-align:center">Support the project and increase your permanent multiplier!</p></div><button class="btn-action">BUY 10 BRUH ($1.00)</button><button class="btn-action">BUY 100 BRUH ($9.00)</button>`;
         }
     }
 
