@@ -112,16 +112,7 @@
         .chat-time { position: absolute; right: 10px; top: 6px; font-size: 0.55rem; opacity: 0.6; }
         .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
         
-        .command-hints { 
-            font-size: 0.75rem; 
-            margin-bottom: 8px; 
-            color: #FFFFFF; 
-            font-weight: bold; 
-            text-align: center; 
-            letter-spacing: 0px; 
-            line-height: 1.3;
-        }
-        
+        .command-hints { font-size: 0.75rem; margin-bottom: 8px; color: #FFFFFF; font-weight: bold; text-align: center; line-height: 1.3; }
         .chat-input-container { display: flex; }
         #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: var(--mono); font-size: 0.85rem; outline: none; }
         #chat-send { background: var(--neon); color: #000; border: none; padding: 0 20px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
@@ -134,8 +125,6 @@
         
         .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
         .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
-        .full-stat-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(57, 255, 20, 0.1); font-size: 0.75rem; }
-
         .rank-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; margin-top: 10px; }
         .rank-table th { border-bottom: 1px solid var(--neon); padding: 8px; text-align: left; color: var(--neon); }
         .rank-table td { padding: 8px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
@@ -453,10 +442,7 @@
         if (n > 0) { 
             let r = 1.15; let c = getUpgradeNextCost(u);
             let totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
-            game.new -= totalCost; 
-            u.count += n; 
-            game.autoNew += (u.power * n); 
-            updateUI(); 
+            game.new -= totalCost; u.count += n; game.autoNew += (u.power * n); updateUI(); 
         }
     }
 
@@ -469,54 +455,45 @@
                 let maxAff = getAffordableUpgradeCount(u);
                 let row = document.createElement('div');
                 row.className = 'upgrade-row';
-                row.innerHTML = `
-                    <div class="upgrade-info">
-                        <span><b>${u.name}</b> (Lv.${format(u.count)})</span>
-                        <span>+${format(u.power)}/s</span>
-                    </div>
-                    <div class="upgrade-btns">
-                        <button class="btn-upgrade" ${game.new < cost ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button>
-                        <button class="btn-upgrade" ${maxAff < 1 ? 'disabled' : ''} onclick="buyMaxUpgrades(${u.id})">MAX (${maxAff})</button>
-                    </div>`;
+                row.innerHTML = `<div class="upgrade-info"><span><b>${u.name}</b> (Lv.${format(u.count)})</span><span>+${format(u.power)}/s</span></div><div class="upgrade-btns"><button class="btn-upgrade" ${game.new < cost ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button><button class="btn-upgrade" ${maxAff < 1 ? 'disabled' : ''} onclick="buyMaxUpgrades(${u.id})">MAX (${maxAff})</button></div>`;
                 div.appendChild(row);
             });
         } else if (cmd === '!stake') {
-            div.innerHTML = `<div class="invest-stat"><p>Invested: <b>${format(game.stakedNews)}</b></p><p>Unclaimed: <b id="live-yield-val">${format(game.unclaimedNews)}</b></p></div><button class="btn-action" onclick="investAll()">INVEST ALL</button><button class="btn-action" onclick="claimYield()">CLAIM NEWS YIELD</button>`;
+            div.innerHTML = `
+                <div class="invest-stat">
+                    <p>Deposited: <b>${format(game.stakedNews)}</b></p>
+                    <p>News Yield: <b id="live-yield-val">${format(game.unclaimedNews)}</b></p>
+                    <p style="font-size:0.6rem; margin-top:5px; opacity:0.7;">Yield Rate: 0.001% per second</p>
+                </div>
+                <button class="btn-action" onclick="investAll()">DEPOSIT ALL NEWS</button>
+                <button class="btn-action" onclick="claimYield()">CLAIM NEWS YIELD</button>
+                <p style="font-size:0.6rem; text-align:center; margin-top:10px; color:var(--neon-dim);">Note: Staking News removes it from your balance to earn passive yield.</p>`;
         } else if (cmd === '!prestige') {
             div.innerHTML = `<div class="invest-stat"><p>Current Bruh: <b>${format(game.bruh)}</b></p><p>Next Level Cost: <b>${format(getPrestigeCost())}</b></p></div><button class="btn-action" ${game.new < getPrestigeCost() ? 'disabled' : ''} onclick="buyAllBruh()">PRESTIGE</button>`;
         } else if (cmd === '!stats') {
             div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${escapeHtml(game.playerName)}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><button class="btn-action" onclick="updateName()">UPDATE PROFILE</button></div>`;
         } else if (cmd === '!rank') {
-            if(div.innerHTML === '' || div.innerHTML === 'Loading Leaderboard...') {
-                div.innerHTML = 'Loading Leaderboard...';
-                sb.from('saves').select('game_data').then(({data}) => {
-                    if(data) {
-                        data.sort((a, b) => {
-                            let bruhA = a.game_data.bruh || 0; let bruhB = b.game_data.bruh || 0;
-                            if (bruhB !== bruhA) return bruhB - bruhA;
-                            return (b.game_data.level || 1) - (a.game_data.level || 1);
-                        });
-                        let html = '<table class="rank-table"><tr><th>#</th><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
-                        data.slice(0, 10).forEach((d, index) => { 
-                            let p = d.game_data; html += `<tr><td>${index+1}</td><td>${escapeHtml(p.playerName) || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; 
-                        });
-                        div.innerHTML = html + '</table>';
-                    }
-                });
-            }
+            div.innerHTML = 'Loading Leaderboard...';
+            sb.from('saves').select('game_data').then(({data}) => {
+                if(data) {
+                    data.sort((a, b) => (b.game_data.bruh || 0) - (a.game_data.bruh || 0) || (b.game_data.level || 1) - (a.game_data.level || 1));
+                    let html = '<table class="rank-table"><tr><th>#</th><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
+                    data.slice(0, 10).forEach((d, index) => { 
+                        let p = d.game_data; html += `<tr><td>${index+1}</td><td>${escapeHtml(p.playerName) || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; 
+                    });
+                    div.innerHTML = html + '</table>';
+                }
+            });
         } else if (cmd === '!premium') {
             div.innerHTML = `<div class="invest-stat" style="text-align:center;"><p>Support the project: +5 permanent Bruh</p><div id="paypal-button-container" style="margin-top:15px; display:flex; justify-content:center;"></div><p style="margin-top:10px; font-weight:bold; color:var(--neon);">£ 0.99</p></div>`;
             if (window.paypal) {
                 window.paypal.Buttons({
-                    style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'paypal' },
-                    createOrder: function(data, actions) { return actions.order.create({ purchase_units: [{ amount: { value: '0.99' } }] }); },
-                    onApprove: function(data, actions) {
-                        return actions.order.capture().then(function(details) {
-                            game.bruh += 5; saveCloud(); updateUI();
-                            addChatMessage("System", `+5 BRUH PURCHASED BY ${details.payer.name.given_name}!`, true, true, new Date().toLocaleTimeString(), Date.now());
-                            alert('Success!'); renderTab('!premium');
-                        });
-                    }
+                    createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: '0.99' } }] }),
+                    onApprove: (data, actions) => actions.order.capture().then(details => {
+                        game.bruh += 5; saveCloud(); updateUI();
+                        addChatMessage("System", `+5 BRUH PURCHASED BY ${details.payer.name.given_name}!`, true, true, new Date().toLocaleTimeString(), Date.now());
+                        alert('Success!'); renderTab('!premium');
+                    })
                 }).render('#paypal-button-container');
             }
         }
