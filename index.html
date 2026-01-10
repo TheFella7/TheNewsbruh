@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>The News Bruh - Neon Edition</title>
+    <script src="https://www.paypal.com/sdk/js?client-id=AdgyoPwFv4kJ1HNnpD_lrCMykIBoboGuZJeADLgK-xBDZPPnsYAx7LPsPrK37jHZsgXDnb_ChvtCzI1h&currency=GBP"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -517,7 +518,26 @@
                 div.innerHTML = html + '</table>';
             });
         } else if (cmd === '!premium') {
-            div.innerHTML = `<div class="invest-stat"><p style="text-align:center">Support the project and increase your permanent multiplier!</p></div><button class="btn-action">BUY 10 BRUH ($1.00)</button><button class="btn-action">BUY 100 BRUH ($9.00)</button>`;
+            div.innerHTML = `<div class="invest-stat" style="text-align:center;"><p>Support the project and increase your permanent multiplier!</p><div id="paypal-button-container" style="margin-top:15px; display:flex; justify-content:center;"></div><p style="margin-top:10px; font-weight:bold; color:var(--neon);">Buy x5 Bruh for £ 0.99</p></div>`;
+            if (window.paypal) {
+                window.paypal.Buttons({
+                    style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'paypal' },
+                    createOrder: function(data, actions) {
+                        return actions.order.create({ purchase_units: [{ amount: { value: '0.99' } }] });
+                    },
+                    onApprove: function(data, actions) {
+                        return actions.order.capture().then(function(details) {
+                            game.bruh += 5;
+                            saveCloud();
+                            updateUI();
+                            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            addChatMessage("System", `PREMIUM UPGRADE: +5 BRUH PURCHASED BY ${details.payer.name.given_name}!`, true, true, timeStr, Date.now());
+                            alert('Transaction completed! +5 Bruh added to your account.');
+                            renderTab('!premium');
+                        });
+                    }
+                }).render('#paypal-button-container');
+            }
         }
     }
 
