@@ -35,17 +35,17 @@
         }
 
         /* Modal / Popups */
-        #how-to-play-overlay, #offline-overlay, #auth-overlay {
+        #how-to-play-overlay, #offline-overlay, #auth-overlay, #wallet-help-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 2000;
             display: none; align-items: center; justify-content: center;
         }
-        #how-to-play-box, #offline-box, #auth-box {
+        #how-to-play-box, #offline-box, #auth-box, #wallet-help-box {
             width: 90%; max-width: 450px; background: #000; border: 2px solid var(--neon);
             padding: 25px; position: relative; box-shadow: 0 0 30px var(--neon-dim);
             max-height: 85vh; overflow-y: auto; text-align: center;
         }
-        #close-htp, #close-offline, #close-auth {
+        #close-htp, #close-offline, #close-auth, #close-wallet-help {
             position: absolute; top: 10px; right: 15px; font-size: 1.8rem;
             cursor: pointer; font-weight: bold; color: var(--neon); text-shadow: 0 0 10px var(--neon);
         }
@@ -151,15 +151,61 @@
         
         .btn-action { background: var(--neon); color: #000; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px;}
         .btn-crypto { background: var(--poly); color: #fff; border: none; padding: 12px; font-family: var(--mono); font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; box-shadow: 0 0 10px rgba(130, 71, 229, 0.4);}
+        .btn-crypto.loading { opacity: 0.7; cursor: not-allowed; }
         .invest-stat { margin-bottom: 15px; padding: 10px; border: 1px dashed var(--neon-dim); font-size: 0.8rem; }
         .full-stat-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(57, 255, 20, 0.1); font-size: 0.75rem; }
 
         .rank-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; margin-top: 10px; }
         .rank-table th { border-bottom: 1px solid var(--neon); padding: 8px; text-align: left; color: var(--neon); }
         .rank-table td { padding: 8px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
+        
+        .wallet-help { 
+            font-size: 0.75rem; 
+            line-height: 1.4; 
+            margin: 15px 0; 
+            text-align: left;
+        }
+        .wallet-help li { margin-bottom: 10px; }
     </style>
 </head>
 <body>
+
+<!-- Wallet Help Modal -->
+<div id="wallet-help-overlay">
+    <div id="wallet-help-box">
+        <div id="close-wallet-help" onclick="document.getElementById('wallet-help-overlay').style.display='none'">X</div>
+        <div class="htp-header">WALLET SETUP</div>
+        <div class="htp-sub">TROUBLESHOOTING GUIDE</div>
+        <div class="wallet-help">
+            <div class="htp-section-title">ON DESKTOP (Chrome/Firefox)</div>
+            <ul>
+                <li><b>1.</b> Install <a href="https://metamask.io/" target="_blank" style="color:var(--neon)">MetaMask</a> extension</li>
+                <li><b>2.</b> Click the extension icon in browser</li>
+                <li><b>3.</b> Create/import wallet & ensure it's unlocked</li>
+                <li><b>4.</b> Add Polygon network (auto-added by our app)</li>
+                <li><b>5.</b> Get MATIC from an exchange</li>
+            </ul>
+            
+            <div class="htp-section-title">ON MOBILE (iOS/Android)</div>
+            <ul>
+                <li><b>Option A:</b> Open in <b>MetaMask app browser</b></li>
+                <li><b>Option B:</b> Open in <b>Trust Wallet app browser</b></li>
+                <li><b>Option C:</b> Use <b>WalletConnect</b> (scan QR code)</li>
+                <li><b>Note:</b> Safari/Chrome mobile don't inject wallets</li>
+            </ul>
+            
+            <div class="htp-section-title">QUICK FIXES</div>
+            <ul>
+                <li>🔁 <b>Refresh page</b> after wallet is installed</li>
+                <li>🔓 Ensure wallet is <b>unlocked</b></li>
+                <li>🌐 Try a <b>different browser</b></li>
+                <li>📱 Use <b>wallet's built-in browser</b></li>
+            </ul>
+        </div>
+        <button class="btn-action" onclick="document.getElementById('wallet-help-overlay').style.display='none'; testWalletConnection();">TEST CONNECTION</button>
+        <button class="btn-crypto" onclick="window.open('https://metamask.io/download/', '_blank')" style="margin-top:10px;">INSTALL METAMASK</button>
+    </div>
+</div>
 
 <div id="how-to-play-overlay" style="display:flex;">
     <div id="how-to-play-box">
@@ -317,6 +363,65 @@
     let boostAnimInterval = null;
     let lastTick = Date.now();
     let authMode = 'login'; // login or register
+
+    // Improved wallet detection
+    function detectWalletProvider() {
+        // Check for multiple wallet providers
+        if (typeof window.ethereum !== 'undefined') {
+            // Modern EIP-1193 provider
+            return window.ethereum;
+        } else if (typeof window.web3 !== 'undefined') {
+            // Legacy web3 provider
+            return window.web3.currentProvider;
+        } else if (window.trustwallet) {
+            // Trust Wallet provider
+            return window.trustwallet;
+        } else if (window.coinbase) {
+            // Coinbase Wallet
+            return window.coinbase;
+        } else if (window.binance) {
+            // Binance Chain Wallet
+            return window.binance;
+        } else if (window.phantom && window.phantom.ethereum) {
+            // Phantom Wallet
+            return window.phantom.ethereum;
+        }
+        
+        // Check for injected providers in the window object
+        const providers = [
+            window.ethereum,
+            window.web3?.currentProvider,
+            window.trustwallet,
+            window.coinbase,
+            window.binance,
+            window.phantom?.ethereum
+        ];
+        
+        for (const provider of providers) {
+            if (provider) {
+                return provider;
+            }
+        }
+        
+        return null;
+    }
+
+    function testWalletConnection() {
+        const provider = detectWalletProvider();
+        const statusEl = document.getElementById('crypto-status');
+        
+        if (provider) {
+            statusEl.innerText = "✅ Wallet detected! Try payment again.";
+            statusEl.style.color = "var(--neon)";
+        } else {
+            statusEl.innerText = "❌ No wallet detected. Open in wallet browser.";
+            statusEl.style.color = "var(--error)";
+        }
+    }
+
+    function showWalletHelp() {
+        document.getElementById('wallet-help-overlay').style.display = 'flex';
+    }
 
     // --- AUTH LOGIC START ---
     function openAuth() {
@@ -702,91 +807,222 @@
 
     async function payWithPolygon() {
         const statusEl = document.getElementById('crypto-status');
+        const button = document.querySelector('.btn-crypto');
+        const originalText = button.innerText;
         
-        if (typeof window.ethereum === 'undefined') {
-            statusEl.innerText = "Error: No Web3 Wallet (MetaMask/Trust/etc) detected.";
+        statusEl.style.color = "var(--neon)";
+        
+        // Disable button during processing
+        button.classList.add('loading');
+        button.innerText = "Processing...";
+        
+        // Use improved wallet detection
+        const provider = detectWalletProvider();
+        
+        if (!provider) {
+            statusEl.innerText = "No wallet detected. Open in MetaMask/Trust Wallet browser.";
             statusEl.style.color = "var(--error)";
+            button.classList.remove('loading');
+            button.innerText = originalText;
+            
+            // Show help modal
+            setTimeout(() => {
+                showWalletHelp();
+            }, 500);
             return;
         }
 
         try {
             statusEl.innerText = "Connecting to wallet...";
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
             
-            // Check Network (Polygon Chain ID 137)
-            const network = await provider.getNetwork();
-            if (network.chainId !== 137n) {
-                statusEl.innerText = "Switching to Polygon...";
+            // Check if we need to request accounts
+            let ethereumProvider = provider;
+            
+            // If it's the legacy web3 provider, we need to handle it differently
+            if (!ethereumProvider.request && ethereumProvider.sendAsync) {
+                // Legacy provider - try to get accounts
+                statusEl.innerText = "Legacy wallet detected...";
+                const accounts = await new Promise((resolve, reject) => {
+                    ethereumProvider.sendAsync({ method: 'eth_accounts' }, (err, result) => {
+                        if (err) reject(err);
+                        else resolve(result.result);
+                    });
+                });
+                
+                if (!accounts || accounts.length === 0) {
+                    statusEl.innerText = "Please unlock your wallet first";
+                    statusEl.style.color = "var(--error)";
+                    button.classList.remove('loading');
+                    button.innerText = originalText;
+                    return;
+                }
+                
+                // Create a minimal EIP-1193 compatible provider
+                const legacyProvider = {
+                    request: async (args) => {
+                        return new Promise((resolve, reject) => {
+                            ethereumProvider.sendAsync(args, (err, result) => {
+                                if (err) reject(err);
+                                else resolve(result.result);
+                            });
+                        });
+                    }
+                };
+                ethereumProvider = legacyProvider;
+            } else if (ethereumProvider.request) {
+                // Modern EIP-1193 provider
                 try {
-                    await window.ethereum.request({
+                    await ethereumProvider.request({ method: 'eth_requestAccounts' });
+                } catch (reqErr) {
+                    if (reqErr.code === 4001) {
+                        statusEl.innerText = "Wallet connection rejected";
+                        statusEl.style.color = "var(--error)";
+                        button.classList.remove('loading');
+                        button.innerText = originalText;
+                        return;
+                    }
+                    throw reqErr;
+                }
+            }
+            
+            // Create ethers provider
+            let ethersProvider;
+            try {
+                ethersProvider = new ethers.BrowserProvider(ethereumProvider);
+            } catch (etherErr) {
+                // Fallback for older ethers compatibility
+                ethersProvider = new ethers.providers.Web3Provider(ethereumProvider);
+            }
+            
+            let signer = await ethersProvider.getSigner();
+            const fromAddress = await signer.getAddress();
+            
+            // Check current network
+            const network = await ethersProvider.getNetwork();
+            const polygonChainId = 137n; // Polygon Mainnet
+            
+            // Switch to Polygon if not already on it
+            if (network.chainId !== polygonChainId) {
+                statusEl.innerText = "Switching to Polygon network...";
+                
+                try {
+                    await ethereumProvider.request({
                         method: 'wallet_switchEthereumChain',
                         params: [{ chainId: '0x89' }], // 137 in hex
                     });
                 } catch (switchError) {
-                    // This error code indicates that the chain has not been added to MetaMask.
+                    // If network isn't added yet, add it
                     if (switchError.code === 4902) {
-                        try {
-                            await window.ethereum.request({
-                                method: 'wallet_addEthereumChain',
-                                params: [
-                                    {
-                                        chainId: '0x89',
-                                        chainName: 'Polygon Mainnet',
-                                        nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
-                                        rpcUrls: ['https://polygon-rpc.com/']
+                        await ethereumProvider.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [
+                                {
+                                    chainId: '0x89',
+                                    chainName: 'Polygon Mainnet',
+                                    nativeCurrency: {
+                                        name: 'MATIC',
+                                        symbol: 'MATIC',
+                                        decimals: 18
                                     },
-                                ],
-                            });
-                        } catch (addError) {
-                            throw addError;
-                        }
+                                    rpcUrls: ['https://polygon-rpc.com/'],
+                                    blockExplorerUrls: ['https://polygonscan.com/']
+                                }
+                            ]
+                        });
                     } else {
                         throw switchError;
                     }
                 }
+                
+                // Refresh provider after network switch
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                try {
+                    ethersProvider = new ethers.BrowserProvider(ethereumProvider);
+                } catch (e) {
+                    ethersProvider = new ethers.providers.Web3Provider(ethereumProvider);
+                }
+                signer = await ethersProvider.getSigner();
             }
 
-            // Calculate Price
-            statusEl.innerText = "Calculating live rate...";
-            const gbpPrice = 0.99;
+            // Get MATIC price in GBP
+            statusEl.innerText = "Fetching live exchange rate...";
             const maticRate = await getMaticPriceInGBP();
-            const maticAmount = (gbpPrice / maticRate).toFixed(4);
+            if (!maticRate || maticRate <= 0) {
+                throw new Error("Could not fetch MATIC price");
+            }
             
-            const confirmed = confirm(`Pay ${maticAmount} MATIC (~£0.99) for +5 Bruh?`);
-            if(!confirmed) {
-                statusEl.innerText = "Transaction cancelled.";
+            // Calculate MATIC amount for £0.99
+            const gbpPrice = 0.99;
+            const maticAmount = (gbpPrice / maticRate).toFixed(6);
+            
+            // Create human-readable display
+            const shortAddress = fromAddress.substring(0, 6) + '...' + fromAddress.substring(fromAddress.length - 4);
+            
+            const confirmMsg = `Confirm payment of ${maticAmount} MATIC (≈£0.99) from ${shortAddress} for +5 Bruh?`;
+            
+            if (!confirm(confirmMsg)) {
+                statusEl.innerText = "Transaction cancelled";
+                button.classList.remove('loading');
+                button.innerText = originalText;
                 return;
             }
 
-            statusEl.innerText = "Please confirm in wallet...";
+            statusEl.innerText = "Please confirm transaction in wallet...";
             
-            // Send Transaction
-            const tx = await signer.sendTransaction({
+            // Prepare transaction
+            const txParams = {
                 to: CRYPTO_TARGET,
-                value: ethers.parseEther(maticAmount.toString())
-            });
+                value: ethers.parseEther(maticAmount)
+            };
 
-            statusEl.innerText = "Processing TX: " + tx.hash.substring(0, 8) + "...";
+            // Send transaction
+            const txResponse = await signer.sendTransaction(txParams);
+            statusEl.innerText = `Transaction sent: ${txResponse.hash.substring(0, 10)}...`;
             
-            // Wait for 1 confirmation
-            await tx.wait();
+            // Wait for confirmation (1 block)
+            const receipt = await txResponse.wait(1);
             
-            // Grant Reward
-            game.bruh += 5;
-            saveCloud();
-            updateUI();
-            
-            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            addChatMessage("System", `CRYPTO WHALE: +5 BRUH BOUGHT WITH POLYGON!`, true, true, timeStr, Date.now());
-            
-            alert('Transaction Confirmed! +5 Bruh Added.');
-            renderTab('!premium');
+            if (receipt.status === 1) {
+                // Transaction successful - grant reward
+                game.bruh += 5;
+                saveCloud();
+                updateUI();
+                
+                const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                addChatMessage("System", `CRYPTO PAYMENT: ${shortAddress} purchased +5 BRUH!`, true, true, timeStr, Date.now());
+                
+                statusEl.innerText = "Success! +5 Bruh added to your account";
+                alert('Transaction confirmed! +5 Bruh has been added to your account.');
+                
+                // Refresh the premium tab
+                if (chat.currentTab === '!premium') {
+                    renderTab('!premium');
+                }
+            } else {
+                throw new Error("Transaction failed");
+            }
             
         } catch (err) {
-            console.error(err);
-            statusEl.innerText = "Error: " + (err.shortMessage || err.message || "Unknown error");
+            console.error("Crypto payment error:", err);
+            
+            let errorMsg = "Transaction failed: ";
+            if (err.code === 4001 || err.code === -32603) {
+                errorMsg += "User rejected transaction";
+            } else if (err.message && err.message.includes("user rejected")) {
+                errorMsg += "User rejected request";
+            } else if (err.message && err.message.includes("network")) {
+                errorMsg += "Network error - please try again";
+            } else if (err.message && err.message.includes("insufficient")) {
+                errorMsg += "Insufficient funds for gas";
+            } else {
+                errorMsg += err.message || "Unknown error";
+            }
+            
+            statusEl.innerText = errorMsg;
             statusEl.style.color = "var(--error)";
+        } finally {
+            button.classList.remove('loading');
+            button.innerText = originalText;
         }
     }
     // --- CRYPTO LOGIC END ---
@@ -849,7 +1085,10 @@
                         <button class="btn-crypto" onclick="payWithPolygon()">
                             PAY WITH POLYGON (MATIC)
                         </button>
-                        <p id="crypto-status" style="font-size:0.6rem; margin-top:5px; color:#aaa; height:15px;"></p>
+                        <button class="btn-action" onclick="showWalletHelp()" style="background:#000; color:var(--neon); border:1px solid var(--neon); margin-top:5px; font-size:0.6rem;">
+                            WALLET HELP
+                        </button>
+                        <p id="crypto-status" style="font-size:0.6rem; margin-top:5px; color:#aaa; min-height:15px;"></p>
                     </div>
                 </div>`;
             
