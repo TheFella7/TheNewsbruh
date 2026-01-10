@@ -87,12 +87,6 @@
         #p8 { top: 60px; left: 30px; transform: rotate(-3deg); }
         #p9 { top: 70px; left: 50px; transform: rotate(20deg); }
 
-        .falling-paper {
-            position: fixed; top: -50px; font-size: 24px; pointer-events: none; z-index: 1;
-            filter: drop-shadow(0 0 5px var(--neon-dim)); animation: fall linear forwards;
-        }
-        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
-
         .boost-control { margin-top: 20px; z-index: 100; text-align: center; }
         .btn-boost { background: var(--neon); color: #000; border: none; padding: 12px 24px; font-family: var(--mono); font-weight: bold; cursor: pointer; box-shadow: 0 0 15px var(--neon); }
         .btn-boost:disabled { background: #000; color: var(--neon-dim); box-shadow: none; cursor: not-allowed; border: 1px solid var(--neon-dim); }
@@ -113,17 +107,6 @@
         .chat-message { padding: 6px 10px; border-radius: 4px; background: rgba(57, 255, 20, 0.05); border-left: 2px solid var(--neon); animation: fadeIn 0.3s ease; position: relative; word-wrap: break-word;}
         .chat-time { position: absolute; right: 10px; top: 6px; font-size: 0.55rem; opacity: 0.6; }
         .chat-input-area { background: rgba(0,0,0,0.9); padding: 10px; border-top: 1px solid var(--neon-dim); }
-        
-        .command-hints { 
-            font-size: 0.75rem; 
-            margin-bottom: 8px; 
-            color: #FFFFFF; 
-            font-weight: bold; 
-            text-align: center; 
-            letter-spacing: 0px; 
-            line-height: 1.3;
-        }
-        
         .chat-input-container { display: flex; }
         #chat-input { flex-grow: 1; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: var(--mono); font-size: 0.85rem; outline: none; }
         #chat-send { background: var(--neon); color: #000; border: none; padding: 0 20px; font-family: var(--mono); font-weight: bold; cursor: pointer; margin-left: 5px; }
@@ -142,7 +125,7 @@
         .rank-table th { border-bottom: 1px solid var(--neon); padding: 8px; text-align: left; color: var(--neon); }
         .rank-table td { padding: 8px; border-bottom: 1px solid rgba(57, 255, 20, 0.1); }
 
-        /* Wallet Modal specific styles */
+        /* Wallet Selector Styles */
         .wallet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .wallet-option {
             background: #000; border: 1px solid var(--neon); color: #fff; padding: 15px;
@@ -159,21 +142,15 @@
     <div id="how-to-play-box">
         <div id="close-htp" onclick="document.getElementById('how-to-play-overlay').style.display='none'">X</div>
         <div class="htp-header">The News Bruh</div>
-        <div class="htp-sub">SYSTEM VERSION 2.5 // NEON_OS</div>
+        <div class="htp-sub">SYSTEM VERSION 2.6 // NEON_OS</div>
         <div class="htp-content">
             <div class="htp-section-title">BASICS</div>
             <p>🗞️ <b>TAP</b> the newspapers to generate News.<br>
             👑 <b>PRESTIGE</b> to earn Bruh for a permanent multiplier.<br>
             🔥 <b>BOOST</b> auto-triggers at 100% stack for <b>5.0x</b> News.</p>
-            <div class="htp-section-title">TERMINAL COMMANDS</div>
+            <div class="htp-section-title">COMMANDS</div>
             <ul class="cmd-list">
-                <li><code>!upgrades</code> - Passive income sources.</li>
-                <li><code>!stake</code> - Earn <b>News Yield</b> on deposits.</li>
-                <li><code>!prestige</code> - Permanent <b>👑 Bruh</b> multipliers.</li>
-                <li><code>!premium</code> - Buy/Restore Bruh upgrades.</li>
-                <li><code>!rank</code> - Global leaderboard.</li>
-                <li><code>!stats</code> - Lifetime progress and Alias change.</li>
-                <li><code>!close</code> - Return to stack.</li>
+                <li><code>!upgrades</code>, <code>!stake</code>, <code>!prestige</code>, <code>!rank</code>, <code>!stats</code>, <code>!premium</code></li>
             </ul>
         </div>
     </div>
@@ -182,14 +159,12 @@
 <div id="offline-overlay">
     <div id="offline-box">
         <div class="htp-header">Offline Log</div>
-        <div class="htp-sub">WELCOME BACK, BRUH</div>
+        <div class="htp-sub">WELCOME BACK</div>
         <div class="htp-content">
-            <p>You were gone for: <b id="off-time">0h 0m</b></p>
-            <div class="htp-section-title">EARNINGS</div>
-            <p>🗞️ News Generated: <b id="off-news">0</b></p>
-            <p>📈 Staking Yield: <b id="off-stake">0</b></p>
-            <br>
-            <button class="btn-action" onclick="document.getElementById('offline-overlay').style.display='none'">RESUME CIRCULATION</button>
+            <p>Away for: <b id="off-time">0h 0m</b></p>
+            <p>🗞️ News: <b id="off-news">0</b></p>
+            <p>📈 Yield: <b id="off-stake">0</b></p><br>
+            <button class="btn-action" onclick="document.getElementById('offline-overlay').style.display='none'">RESUME</button>
         </div>
     </div>
 </div>
@@ -197,35 +172,27 @@
 <div id="wallet-modal-overlay">
     <div id="wallet-box">
         <div id="close-wallet" onclick="document.getElementById('wallet-modal-overlay').style.display='none'">X</div>
-        <div class="htp-header">Select Wallet</div>
-        <div class="htp-sub">INITIALIZE CRYPTO LINK</div>
+        <div class="htp-header">Open Wallet</div>
+        <div class="htp-sub">SELECT APP TO PAY £0.99</div>
         <div class="wallet-grid">
             <div class="wallet-option" onclick="connectAndPay('metamask')">
                 <span class="wallet-icon">🦊</span>
                 <span class="wallet-name">METAMASK</span>
             </div>
+            <div class="wallet-option" onclick="connectAndPay('trust')">
+                <span class="wallet-icon">🛡️</span>
+                <span class="wallet-name">TRUST</span>
+            </div>
             <div class="wallet-option" onclick="connectAndPay('coinbase')">
                 <span class="wallet-icon">🔵</span>
                 <span class="wallet-name">COINBASE</span>
             </div>
-            <div class="wallet-option" onclick="connectAndPay('rabby')">
-                <span class="wallet-icon">🐰</span>
-                <span class="wallet-name">RABBY</span>
-            </div>
-            <div class="wallet-option" onclick="connectAndPay('trust')">
-                <span class="wallet-icon">🛡️</span>
-                <span class="wallet-name">TRUST WALLET</span>
-            </div>
             <div class="wallet-option" onclick="connectAndPay('okx')">
                 <span class="wallet-icon">⚫</span>
-                <span class="wallet-name">OKX WALLET</span>
-            </div>
-            <div class="wallet-option" onclick="connectAndPay('injected')">
-                <span class="wallet-icon">🔌</span>
-                <span class="wallet-name">BROWSER/OTHER</span>
+                <span class="wallet-name">OKX</span>
             </div>
         </div>
-        <p style="font-size: 0.6rem; margin-top: 20px; color: #888;">Network: Polygon (MATIC/POL)</p>
+        <p style="font-size: 0.55rem; margin-top: 20px; color: #888;">Payments processed on Polygon (POL/MATIC)</p>
     </div>
 </div>
 
@@ -233,7 +200,7 @@
 
 <div id="header">
     <div class="header-top-row">
-        <div class="global-msg-count">MSG SENT: <span id="msg-total-val">0</span></div>
+        <div class="global-msg-count">MSG: <span id="msg-total-val">0</span></div>
         <div class="chat-indicator" onclick="toggleChat()">
             ✉️ <span class="chat-badge hidden" id="unread-count">0</span>
         </div>
@@ -246,9 +213,7 @@
     <div class="stat-item"><span>🗞️ News:</span> <span id="res-new">0</span></div>
     <div class="stat-item"><span>Lvl:</span> <span id="stat-level">1</span></div>
     <div class="stat-item"><span>👑 Bruh:</span> <span id="res-bruh">0</span></div>
-    <div class="stat-item"><span>Exp:</span> <span><span id="stat-exp">0</span>/<span id="stat-next-exp">100</span></span></div>
     <div class="stat-item"><span>⚡ Mult:</span> <span id="res-mult">1.0</span>x</div>
-    <div class="stat-item"><span>Total Exp:</span> <span id="stat-total-exp">0</span></div>
 </div>
 
 <div id="clicker-area">
@@ -267,7 +232,6 @@
         <div id="boost-timer-display" style="display:none">Boost: 15.0s</div>
         <button id="boost-btn" class="btn-boost" onclick="activateBoost(event)" disabled>[ Stack papers ]</button>
         <div id="nps-display">0.0 Nps</div>
-        <p id="tap-msg" style="margin-top: 15px; font-size: 0.7rem; letter-spacing: 2px;">[ TAP TO CIRCULATE ]</p>
     </div>
 </div>
 
@@ -277,12 +241,11 @@
 </div>
 
 <div id="chat-container">
-    <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK CHAT (24H LOG)</span><span id="chat-toggle-icon">▼</span></div>
+    <div class="chat-toggle" onclick="toggleChat()"><span>NETWORK TERMINAL</span><span id="chat-toggle-icon">▼</span></div>
     <div id="chat-log"></div>
     <div class="chat-input-area">
-        <div class="command-hints">TYPE !upgrades !rank !stats !stake !prestige !premium !close</div>
         <div class="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Broadcast message or !command..." maxlength="100">
+            <input type="text" id="chat-input" placeholder="!upgrades, !rank, !premium..." maxlength="100">
             <button id="chat-send" onclick="handleInput()">EXEC</button>
         </div>
     </div>
@@ -313,556 +276,208 @@
     };
 
     let chat = { messages: [], unreadCount: 0, isOpen: true, currentTab: null };
-    let boostAnimInterval = null;
     let lastTick = Date.now();
-
-    // Security: Prevent XSS
-    function escapeHtml(text) {
-        if (!text) return text;
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    function format(num) {
-        if (num < 1000) return num.toFixed(1);
-        const suffixes = ["k", "m", "b", "t"];
-        let exp = Math.floor(Math.log10(num) / 3);
-        if (exp <= 4) return (num / Math.pow(10, exp * 3)).toFixed(2) + (suffixes[exp - 1] || "");
-        let alphaExp = exp - 5;
-        let suffix = "";
-        let n = alphaExp;
-        while (n >= 0) { suffix = String.fromCharCode(97 + (n % 26)) + suffix; n = Math.floor(n / 26) - 1; }
-        return (num / Math.pow(10, exp * 3)).toFixed(2) + suffix;
-    }
 
     const globalChannel = sb.channel('global_hub', { config: { presence: { key: playerUUID } } });
     globalChannel
         .on('broadcast', { event: 'chat' }, (payload) => {
-            const isSelf = payload.payload.uid === playerUUID;
-            addChatMessage(payload.payload.user, payload.payload.msg, false, isSelf, payload.payload.time, payload.payload.rawTime);
-            updateGlobalMsgCount();
+            addChatMessage(payload.payload.user, payload.payload.msg, false, payload.payload.uid === playerUUID, payload.payload.time);
         })
         .on('presence', { event: 'sync' }, () => {
-            const state = globalChannel.presenceState();
-            document.getElementById('online-count').innerText = Object.keys(state).length;
+            document.getElementById('online-count').innerText = Object.keys(globalChannel.presenceState()).length;
         })
-        .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') { 
-                await globalChannel.track({ online_at: new Date().toISOString() }); 
-                loadPersistentChat();
-                updateGlobalMsgCount();
-            }
-        });
+        .subscribe(async (s) => { if (s === 'SUBSCRIBED') { await globalChannel.track({ online_at: new Date() }); loadPersistentChat(); updateGlobalMsgCount(); } });
 
     async function loadPersistentChat() {
-        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data } = await sb.from('chat_history')
-            .select('*')
-            .gt('created_at', yesterday)
-            .order('created_at', { ascending: true });
-            
+        const yesterday = new Date(Date.now() - 86400000).toISOString();
+        const { data } = await sb.from('chat_history').select('*').gt('created_at', yesterday).order('created_at', { ascending: true });
         if (data) {
-            chat.messages = data.map(d => ({
-                s: d.sender, 
-                m: d.message, 
-                sys: false, 
-                time: new Date(d.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                rawTime: new Date(d.created_at).getTime()
-            }));
+            chat.messages = data.map(d => ({ s: d.sender, m: d.message, sys: false, time: new Date(d.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }));
             renderChat();
         }
     }
 
-    function cleanupOldMessages() {
-        const cutoff = Date.now() - (24 * 60 * 60 * 1000);
-        const initialLen = chat.messages.length;
-        chat.messages = chat.messages.filter(msg => msg.sys || (msg.rawTime && msg.rawTime > cutoff));
-        if (chat.messages.length !== initialLen) renderChat();
-    }
-    setInterval(cleanupOldMessages, 60000);
-
     async function updateGlobalMsgCount() {
         const { count } = await sb.from('chat_history').select('*', { count: 'exact', head: true });
-        document.getElementById('msg-total-val').innerText = format(count || 0);
+        document.getElementById('msg-total-val').innerText = count || 0;
     }
 
     async function saveCloud() {
         game.lastSaveTime = Date.now();
-        await sb.from('saves').upsert({ user_uuid: playerUUID, game_data: game, updated_at: new Date() }, { onConflict: 'user_uuid' });
+        await sb.from('saves').upsert({ user_uuid: playerUUID, game_data: game, updated_at: new Date() });
         const el = document.getElementById('save-status');
         el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 2000);
-        updateTotalCount();
-    }
-
-    async function updateTotalCount() {
-        const { count } = await sb.from('saves').select('*', { count: 'exact', head: true });
-        document.getElementById('total-players').innerText = format(count || 0);
     }
 
     async function loadCloud() {
         const { data } = await sb.from('saves').select('game_data').eq('user_uuid', playerUUID).single();
-        if (data) { 
-            const savedData = data.game_data;
-            const offlineTime = Math.min((Date.now() - savedData.lastSaveTime) / 1000, 43200);
-            
-            Object.assign(game, savedData); 
-            game.boostActive = false;
-            game.boostTimeLeft = 0;
-            
-            if (isNaN(game.totalExp)) game.totalExp = 0;
-
-            if (offlineTime > 60) {
-                calculateOffline(offlineTime);
-            }
-            updateUI(); 
-        }
-        updateTotalCount();
-        loadPersistentChat();
+        if (data) { Object.assign(game, data.game_data); updateUI(); }
     }
 
-    function calculateOffline(seconds) {
-        const mult = (1 + game.bruh) * game.premiumMult;
-        const generated = game.autoNew * mult * seconds;
-        const yield = game.stakedNews * 0.00001 * seconds;
-        
-        game.new += generated;
-        game.unclaimedNews += yield;
-        game.totalNew += generated;
-        addExp(generated * 0.01);
-
-        document.getElementById('off-time').innerText = `${Math.floor(seconds/3600)}h ${Math.floor((seconds%3600)/60)}m`;
-        document.getElementById('off-news').innerText = format(generated);
-        document.getElementById('off-stake').innerText = format(yield);
-        document.getElementById('offline-overlay').style.display = 'flex';
-    }
-
+    function format(num) { return num >= 1000 ? (num/1000).toFixed(1) + 'k' : Math.floor(num); }
     function getMultiplier() { return (1 + game.bruh) * (game.boostActive ? 5 : 1) * game.premiumMult; }
-    function getPrestigeCost() { return 500000 * Math.pow(5, game.bruh); }
 
     function updateUI() {
         document.getElementById('res-new').innerText = format(game.new);
         document.getElementById('res-bruh').innerText = format(game.bruh);
-        document.getElementById('res-mult').innerText = format(getMultiplier());
-        document.getElementById('stat-level').innerText = format(game.level);
-        document.getElementById('stat-exp').innerText = format(game.exp);
-        document.getElementById('stat-next-exp').innerText = format(game.nextExp);
-        document.getElementById('stat-total-exp').innerText = format(game.totalExp);
+        document.getElementById('res-mult').innerText = getMultiplier().toFixed(1);
+        document.getElementById('stat-level').innerText = game.level;
+        document.getElementById('nps-display').innerText = `${format(game.autoNew * getMultiplier())} Nps`;
         
-        let currentNps = game.autoNew * (1 + game.bruh) * game.premiumMult * (game.boostActive ? 5 : 1);
-        document.getElementById('nps-display').innerText = `${format(currentNps)} Nps`;
-
-        if (chat.currentTab === '!stake') {
-            const stakeLive = document.getElementById('live-yield-val');
-            if (stakeLive) stakeLive.innerText = format(game.unclaimedNews);
-        }
-        if (chat.currentTab === '!prestige') {
-            const prestigeLive = document.getElementById('live-prestige-cost');
-            if (prestigeLive) prestigeLive.innerText = format(getPrestigeCost());
-        }
-
-        const badge = document.getElementById('unread-count');
-        if (chat.unreadCount > 0) { badge.innerText = chat.unreadCount; badge.classList.remove('hidden'); }
-        else { badge.classList.add('hidden'); }
-
         let stack = Math.max(1, Math.min(9, Math.ceil(game.clickCount / 10)));
-        if (game.boostActive) stack = Math.max(1, Math.ceil((game.boostTimeLeft / 15) * 9));
-        for (let i = 1; i <= 9; i++) {
-            const el = document.getElementById('p' + i);
-            if (el) el.style.display = i <= stack ? 'block' : 'none';
-        }
-
-        const btn = document.getElementById('boost-btn');
-        const tmr = document.getElementById('boost-timer-display');
+        for (let i = 1; i <= 9; i++) document.getElementById('p' + i).style.display = i <= stack ? 'block' : 'none';
         
-        if (game.boostActive) { 
-            btn.style.display = 'none'; tmr.style.display = 'block'; 
-            tmr.innerText = `Boost: ${game.boostTimeLeft.toFixed(1)}s`; 
-            if(!boostAnimInterval) startBoostAnimation();
-        }
-        else {
-            btn.style.display = 'inline-block'; tmr.style.display = 'none';
-            stopBoostAnimation();
-            if (game.boostCooldown > 0) { btn.disabled = true; btn.innerText = `Cool: ${Math.ceil(game.boostCooldown)}s`; }
-            else if (game.clickCount < 90) { 
-                btn.disabled = true; 
-                btn.innerText = `Stack: ${Math.floor((game.clickCount/90)*100)}%`; 
-            }
-            else { 
-                btn.disabled = false;
-                btn.innerText = `[ ACTIVATE BOOST ]`;
-            }
-        }
-    }
-
-    function startBoostAnimation() {
-        boostAnimInterval = setInterval(() => {
-            const paper = document.createElement('div');
-            paper.className = 'falling-paper'; paper.innerText = '🗞️';
-            paper.style.left = Math.random() * 100 + 'vw';
-            paper.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            paper.style.opacity = Math.random() * 0.5 + 0.5;
-            document.body.appendChild(paper);
-            setTimeout(() => paper.remove(), 4000);
-        }, 150);
-    }
-
-    function stopBoostAnimation() { if(boostAnimInterval) { clearInterval(boostAnimInterval); boostAnimInterval = null; } }
-
-    async function handleInput() {
-        const input = document.getElementById('chat-input');
-        let val = input.value.trim(); if(!val) return;
-        if (val.startsWith('!')) {
-            let cmd = val.toLowerCase();
-            const container = document.getElementById('tab-container');
-            const clicker = document.getElementById('clicker-area');
-            if (cmd === '!close') { container.classList.remove('active-tab'); clicker.style.display = 'flex'; chat.currentTab = null; }
-            else if (['!upgrades', '!stake', '!stats', '!rank', '!prestige', '!premium'].includes(cmd)) {
-                container.classList.add('active-tab'); clicker.style.display = 'none';
-                
-                let title = cmd.substring(1);
-                if (cmd === '!rank') title = "Leaderboard";
-                if (cmd === '!stake') title = "Invest & Earn News";
-                if (cmd === '!premium') title = "Buy Bruh";
-                
-                document.getElementById('tab-title').innerText = title;
-                chat.currentTab = cmd;
-                renderTab(cmd);
-            }
+        const btn = document.getElementById('boost-btn');
+        if (game.boostActive) {
+            btn.style.display = 'none';
+            document.getElementById('boost-timer-display').style.display = 'block';
+            document.getElementById('boost-timer-display').innerText = `Boost: ${game.boostTimeLeft.toFixed(1)}s`;
         } else {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time: timeStr, rawTime: now.getTime() } });
-            await sb.from('chat_history').insert({ sender: game.playerName, message: val });
-            addChatMessage(game.playerName, val, false, true, timeStr, now.getTime());
-            updateGlobalMsgCount();
-        }
-        input.value = '';
-    }
-
-    function getUpgradeNextCost(u) { return Math.floor(u.baseCost * Math.pow(1.15, u.count)); }
-
-    function buyMaxUpgrades(u) {
-        let b = game.new; let r = 1.15; let c = getUpgradeNextCost(u);
-        if (b < c) return;
-        let n = Math.floor(Math.log(1 - (b * (1 - r) / c)) / Math.log(r));
-        if (n <= 0) n = 1;
-        let totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
-        if (totalCost > b) {
-            while (totalCost > b && n > 0) {
-                n--;
-                totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
-            }
-        }
-        if (n > 0) { 
-            game.new -= totalCost; 
-            u.count += n; 
-            game.autoNew += (u.power * n); 
-            renderTab('!upgrades'); 
-            updateUI(); 
+            btn.style.display = 'inline-block';
+            document.getElementById('boost-timer-display').style.display = 'none';
+            btn.disabled = game.clickCount < 90;
+            btn.innerText = game.clickCount < 90 ? `Stack: ${Math.floor(game.clickCount/90*100)}%` : `[ ACTIVATE ]`;
         }
     }
 
-    async function restorePurchases() {
-        await loadCloud();
-        alert('Cloud save synced. If your Player ID is correct, purchases are restored.');
-        updateUI();
-    }
-
-    // --- WALLET SELECTOR LOGIC ---
-    function showWalletSelector() {
-        document.getElementById('wallet-modal-overlay').style.display = 'flex';
-    }
-
+    // --- WALLET DEEP LINK LOGIC ---
     async function connectAndPay(type) {
         document.getElementById('wallet-modal-overlay').style.display = 'none';
-        let providerObj = null;
-        let walletName = "Wallet";
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        const schemes = {
+            metamask: "metamask://",
+            trust: "trust://",
+            coinbase: "cbwallet://",
+            okx: "okx://wallet"
+        };
 
-        if (type === 'metamask') {
-            walletName = "MetaMask";
-            // Specific check for MetaMask (avoids conflict with others that inject into window.ethereum)
-            if (window.ethereum && window.ethereum.isMetaMask && !window.ethereum.isRabby) providerObj = window.ethereum;
-            else if (window.ethereum) providerObj = window.ethereum; // Fallback
-            else return alert("MetaMask not detected. Please install it.");
-        } 
-        else if (type === 'coinbase') {
-            walletName = "Coinbase Wallet";
-            if (window.coinbaseWalletExtension) providerObj = window.coinbaseWalletExtension;
-            else if (window.ethereum && window.ethereum.isCoinbaseWallet) providerObj = window.ethereum;
-            else return alert("Coinbase Wallet not detected.");
-        }
-        else if (type === 'rabby') {
-             walletName = "Rabby";
-             if (window.ethereum && window.ethereum.isRabby) providerObj = window.ethereum;
-             else return alert("Rabby not detected.");
-        }
-        else if (type === 'trust') {
-            walletName = "Trust Wallet";
-            if (window.trustwallet) providerObj = window.trustwallet;
-            else if (window.ethereum && window.ethereum.isTrust) providerObj = window.ethereum;
-            else return alert("Trust Wallet not detected.");
-        }
-        else if (type === 'okx') {
-            walletName = "OKX Wallet";
-            if (window.okxwallet) providerObj = window.okxwallet;
-            else return alert("OKX Wallet not detected.");
-        }
-        else {
-            // Injected/Browser generic
-            walletName = "Browser Wallet";
-            if (window.ethereum) providerObj = window.ethereum;
-            else return alert("No crypto wallet detected.");
-        }
-
-        if (providerObj) {
-            await executeCryptoPayment(providerObj);
+        if (isMobile && schemes[type]) {
+            // Attempt to open the app directly
+            window.location.href = schemes[type];
+            // If the app opens, the browser pauses. If it doesn't, we continue to web3 logic.
+            setTimeout(() => initWeb3Payment(type), 1500);
+        } else {
+            initWeb3Payment(type);
         }
     }
 
-    async function executeCryptoPayment(providerObj) {
+    async function initWeb3Payment(type) {
+        let provider = window.ethereum;
+        if (type === 'metamask' && window.ethereum?.isMetaMask) provider = window.ethereum;
+        else if (type === 'trust' && window.trustwallet) provider = window.trustwallet;
+        else if (type === 'coinbase' && window.coinbaseWalletExtension) provider = window.coinbaseWalletExtension;
+        else if (type === 'okx' && window.okxwallet) provider = window.okxwallet;
+
+        if (!provider) return alert("Wallet not detected. If on mobile, please open this site inside your Wallet's Browser.");
+        await executeCryptoPayment(provider);
+    }
+
+    async function executeCryptoPayment(provider) {
         try {
-            const browserProvider = new ethers.BrowserProvider(providerObj);
-            const signer = await browserProvider.getSigner(); // Triggers connection popup
+            const browserProvider = new ethers.BrowserProvider(provider);
+            const signer = await browserProvider.getSigner();
             
-            // Check for Polygon Mainnet (ChainID 137)
-            const network = await browserProvider.getNetwork();
-            if (network.chainId !== 137n) {
-                try {
-                    await providerObj.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{ chainId: '0x89' }], 
-                    });
-                } catch (switchError) {
-                    if (switchError.code === 4902) {
-                        await providerObj.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [{
-                                chainId: '0x89',
-                                chainName: 'Polygon Mainnet',
-                                rpcUrls: ['https://polygon-rpc.com/'],
-                                nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
-                                blockExplorerUrls: ['https://polygonscan.com/']
-                            }]
-                        });
-                    } else {
-                        throw switchError;
-                    }
-                }
-            }
-
-            // Fetch Live Price for £0.99 in POL/MATIC
-            const priceReq = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=gbp');
-            const priceData = await priceReq.json();
-            const polPrice = priceData['matic-network'].gbp;
-            const amountToPay = (0.99 / polPrice).toFixed(6);
-
-            const tx = await signer.sendTransaction({
-                to: CRYPTO_WALLET,
-                value: ethers.parseEther(amountToPay)
+            // Switch to Polygon
+            await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x89' }] }).catch(async (err) => {
+                if (err.code === 4902) await provider.request({ method: 'wallet_addEthereumChain', params: [{ chainId: '0x89', chainName: 'Polygon', rpcUrls: ['https://polygon-rpc.com/'], nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 } }] });
             });
 
-            alert(`Transaction broadcasted! Hash: ${tx.hash.substring(0, 10)}... Waiting for confirmation.`);
-            
+            const priceReq = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=gbp');
+            const priceData = await priceReq.json();
+            const amount = (0.99 / priceData['matic-network'].gbp).toFixed(6);
+
+            const tx = await signer.sendTransaction({ to: CRYPTO_WALLET, value: ethers.parseEther(amount) });
+            alert("Transaction Sent! Returning to game...");
             const receipt = await tx.wait();
             if (receipt.status === 1) {
                 game.bruh += 5;
                 saveCloud();
                 updateUI();
-                const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                addChatMessage("System", `CRYPTO PURCHASE SUCCESS: +5 BRUH BY ${game.playerName}!`, true, true, timeStr, Date.now());
-                alert('Success! +5 Bruh added via Polygon.');
-                renderTab('!premium');
+                alert("Success! +5 Bruh added.");
             }
-        } catch (e) {
-            console.error(e);
-            if (e.code === 'ACTION_REJECTED' || e.code === 4001) {
-                 alert("Connection or Transaction rejected by user.");
-            } else {
-                 alert("Payment failed. Ensure you have enough POL on Polygon.");
+        } catch (e) { alert("Payment Failed or Cancelled."); }
+    }
+
+    // --- GAME ENGINE ---
+    document.getElementById('clicker-area').onmousedown = (e) => {
+        if (!game.boostActive) { if (game.clickCount < 90) game.clickCount += 2; }
+        else { game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.2); }
+        let gain = 1 * getMultiplier(); game.new += gain; updateUI();
+    };
+
+    function activateBoost() { game.boostActive = true; game.boostTimeLeft = 15; updateUI(); }
+
+    setInterval(() => {
+        const dt = (Date.now() - lastTick) / 1000; lastTick = Date.now();
+        game.new += game.autoNew * getMultiplier() * dt;
+        if (game.boostActive) {
+            game.boostTimeLeft -= dt;
+            if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; }
+        } else { game.clickCount = Math.max(0, game.clickCount - dt); }
+        updateUI();
+    }, 100);
+
+    async function handleInput() {
+        const input = document.getElementById('chat-input');
+        const val = input.value.trim(); if (!val) return;
+        if (val.startsWith('!')) {
+            const cmd = val.toLowerCase();
+            if (cmd === '!close') { document.getElementById('tab-container').style.display='none'; document.getElementById('clicker-area').style.display='flex'; }
+            else {
+                document.getElementById('tab-container').style.display='block';
+                document.getElementById('clicker-area').style.display='none';
+                document.getElementById('tab-title').innerText = cmd.substring(1);
+                renderTab(cmd);
             }
+        } else {
+            const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            globalChannel.send({ type: 'broadcast', event: 'chat', payload: { user: game.playerName, msg: val, uid: playerUUID, time } });
+            await sb.from('chat_history').insert({ sender: game.playerName, message: val });
+            addChatMessage(game.playerName, val, false, true, time);
         }
+        input.value = '';
     }
 
     function renderTab(cmd) {
         const div = document.getElementById('tab-content');
         if (cmd === '!upgrades') {
-            div.innerHTML = '';
-            game.upgrades.forEach(u => {
-                let cost = getUpgradeNextCost(u);
-                let canAfford = game.new >= cost;
-                let row = document.createElement('div');
-                row.className = 'upgrade-row';
-                row.innerHTML = `<div class="upgrade-info"><span><b>${u.name}</b> (Lv.${format(u.count)})</span><span>+${format(u.power)}/s</span></div><div class="upgrade-btns"><button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button><button class="btn-upgrade" ${!canAfford ? 'disabled' : ''} onclick="buyMaxUpgrades(game.upgrades[${u.id}])">BUY MAX</button></div>`;
-                div.appendChild(row);
-            });
-        } else if (cmd === '!stake') {
-            div.innerHTML = `<div class="invest-stat"><p>Invested: <b>${format(game.stakedNews)}</b></p><p style="font-size: 0.6rem; color: #FFFFFF;">Rate: 0.00001 News / Staked New</p><p>Unclaimed Yield: <b id="live-yield-val">${format(game.unclaimedNews)}</b></p></div><button class="btn-action" onclick="investAll()">INVEST ALL</button><button class="btn-action" onclick="unstakeAll()">UNSTAKE ALL</button><button class="btn-action" onclick="claimYield()" style="background:#fff; color:#000;">CLAIM NEWS YIELD</button>`;
-        } else if (cmd === '!prestige') {
-            let cost = getPrestigeCost();
-            div.innerHTML = `<div class="invest-stat"><p>Current Bruh: <b>${format(game.bruh)}</b></p><p>Perm Multiplier: <b>${format(game.bruh+1)}x</b></p><p>Next Level Cost: <b id="live-prestige-cost">${format(cost)}</b> News</p></div><button class="btn-action" onclick="buyAllBruh()">BUY ALL BRUH & PRESTIGE</button>`;
-        } else if (cmd === '!stats') {
-            div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${escapeHtml(game.playerName)}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Current Multiplier:</span> <b>${format(game.bruh+1)}x</b></div><button class="btn-action" onclick="updateName()">UPDATE PROFILE</button></div>`;
-        } else if (cmd === '!rank') {
-            div.innerHTML = 'Loading Leaderboard...';
-            sb.from('saves')
-              .select('game_data')
-              .limit(50)
-              .then(({data}) => {
-                if(data) {
-                    data.sort((a, b) => {
-                        let bruhA = a.game_data.bruh || 0;
-                        let bruhB = b.game_data.bruh || 0;
-                        if (bruhB !== bruhA) return bruhB - bruhA;
-                        return (b.game_data.level || 1) - (a.game_data.level || 1);
-                    });
-                    let html = '<table class="rank-table"><tr><th>#</th><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
-                    data.slice(0, 10).forEach((d, index) => { 
-                        let p = d.game_data; 
-                        html += `<tr><td>${index+1}</td><td>${escapeHtml(p.playerName) || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; 
-                    });
-                    div.innerHTML = html + '</table>';
-                }
-            });
+            div.innerHTML = game.upgrades.map(u => `<div class="upgrade-row"><div class="upgrade-info">${u.name} (Lv.${u.count})</div><button class="btn-upgrade" onclick="buyUp(${u.id})">Buy: ${format(u.baseCost * Math.pow(1.15, u.count))}</button></div>`).join('');
         } else if (cmd === '!premium') {
-            div.innerHTML = `<div style="text-align:center; margin-bottom:15px;"><button class="btn-action" style="background:#000; color:var(--neon); border:1px solid var(--neon); width:auto; padding:5px 15px; font-size:0.6rem;" onclick="restorePurchases()">RESTORE PURCHASES</button></div>
-            <div class="invest-stat" style="text-align:center;">
-                <p>Support the project (+5 permanent Bruh)</p>
-                <div id="paypal-button-container" style="margin-top:15px;"></div>
-                <button class="btn-action" style="background: #8247e5; color: white;" onclick="showWalletSelector()">PAY WITH WALLET (POLYGON)</button>
-                <p style="margin-top:10px; font-size: 0.6rem; color: #aaa;">Supported: MetaMask, Coinbase, OKX, Trust, Rabby</p>
-                <p style="margin-top:5px; font-size: 0.5rem; color: var(--neon);">Price: £0.99 (Auto-converted to Crypto)</p>
-            </div>`;
-            if (window.paypal) {
-                window.paypal.Buttons({
-                    style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'paypal' },
-                    createOrder: function(data, actions) {
-                        return actions.order.create({ purchase_units: [{ amount: { value: '0.99' } }] });
-                    },
-                    onApprove: function(data, actions) {
-                        return actions.order.capture().then(function(details) {
-                            game.bruh += 5;
-                            saveCloud();
-                            updateUI();
-                            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            addChatMessage("System", `PREMIUM UPGRADE: +5 BRUH PURCHASED BY ${details.payer.name.given_name}!`, true, true, timeStr, Date.now());
-                            alert('Transaction completed! +5 Bruh added to your account.');
-                            renderTab('!premium');
-                        });
-                    }
-                }).render('#paypal-button-container');
-            }
+            div.innerHTML = `<div class="invest-stat"><p>+5 Permanent Bruh Multiplier</p><button class="btn-action" onclick="document.getElementById('wallet-modal-overlay').style.display='flex'">PAY £0.99 CRYPTO</button></div>`;
+        } else if (cmd === '!rank') {
+            div.innerHTML = "Fetching...";
+            sb.from('saves').select('game_data').limit(10).then(({data}) => {
+                div.innerHTML = `<table class="rank-table"><tr><th>User</th><th>Bruh</th></tr>${data.map(d => `<tr><td>${d.game_data.playerName}</td><td>${d.game_data.bruh}</td></tr>`).join('')}</table>`;
+            });
         }
     }
 
-    function updateName() {
-        let n = document.getElementById('name-in').value.trim();
-        if(n) { game.playerName = n; saveCloud(); alert('Name updated!'); }
-    }
-
-    function buyUpgrade(id) {
-        const u = game.upgrades.find(x => x.id === id);
-        const cost = getUpgradeNextCost(u);
+    function buyUp(id) {
+        const u = game.upgrades[id];
+        const cost = u.baseCost * Math.pow(1.15, u.count);
         if (game.new >= cost) { game.new -= cost; u.count++; game.autoNew += u.power; renderTab('!upgrades'); updateUI(); }
     }
 
-    function buyAllBruh() {
-        let count = 0; while (game.new >= getPrestigeCost()) { game.new -= getPrestigeCost(); game.bruh++; count++; }
-        if (count > 0) {
-            game.new = 0; game.level = 1; game.exp = 0; game.nextExp = 100; game.autoNew = 0; 
-            game.upgrades.forEach(u => u.count = 0);
-            addChatMessage("System", `PRESTIGED! Multiplier is now ${format(game.bruh+1)}x!`, true, true, new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
-            renderTab('!prestige'); updateUI(); saveCloud();
-        }
-    }
-
-    function investAll() { game.stakedNews += game.new; game.new = 0; renderTab('!stake'); }
-    function unstakeAll() { game.new += game.stakedNews; game.stakedNews = 0; renderTab('!stake'); }
-    function claimYield() { game.new += game.unclaimedNews; game.unclaimedNews = 0; renderTab('!stake'); updateUI(); }
-
-    function toggleChat() { 
-        chat.isOpen = !chat.isOpen; 
-        document.getElementById('chat-log').style.display = chat.isOpen ? 'flex' : 'none';
-        document.querySelector('.chat-input-area').style.display = chat.isOpen ? 'block' : 'none';
-        document.getElementById('chat-container').style.height = chat.isOpen ? '280px' : '40px';
-        const icon = document.getElementById('chat-toggle-icon');
-        icon.innerText = chat.isOpen ? '▼' : '▲';
-        if (chat.isOpen) {
-            chat.unreadCount = 0;
-            setTimeout(() => {
-                const log = document.getElementById('chat-log');
-                log.scrollTop = log.scrollHeight;
-            }, 50);
-        }
-        updateUI(); 
-    }
-
-    function addChatMessage(s, m, isSystem, isSelf, time, rawTime) {
-        const isDuplicate = chat.messages.some(msg => msg.s === s && msg.m === m && msg.time === time);
-        if (!isDuplicate) {
-            chat.messages.push({ s, m, sys: isSystem, time: time || "00:00", rawTime: rawTime || Date.now() });
-            if (chat.messages.length > 500) chat.messages.shift();
-            renderChat();
-            if (!chat.isOpen && !isSelf) { chat.unreadCount++; updateUI(); }
-        }
+    function addChatMessage(s, m, sys, self, time) {
+        chat.messages.push({ s, m, sys, time });
+        if (chat.messages.length > 50) chat.messages.shift();
+        renderChat();
     }
 
     function renderChat() {
         const log = document.getElementById('chat-log');
-        const wasAtBottom = log.scrollHeight - log.scrollTop <= log.clientHeight + 50;
-        log.innerHTML = chat.messages.map(msg => 
-            `<div class="chat-message"><span class="chat-time">${msg.time}</span><b>${escapeHtml(msg.s)}:</b> ${escapeHtml(msg.m)}</div>`
-        ).join('');
-        if(wasAtBottom && chat.isOpen) log.scrollTop = log.scrollHeight;
+        log.innerHTML = chat.messages.map(msg => `<div class="chat-message"><b>${msg.s}:</b> ${msg.m}</div>`).join('');
+        log.scrollTop = log.scrollHeight;
     }
 
-    document.getElementById('clicker-area').onmousedown = (e) => {
-        if(e.target.id === 'boost-btn') return;
-        if (!game.boostActive) {
-            if (game.clickCount < 90) game.clickCount += 2;
-            if (game.clickCount >= 90 && game.boostCooldown <= 0) activateBoost();
-        } else {
-            game.boostTimeLeft = Math.min(15, game.boostTimeLeft + 0.3);
-        }
-        let m = getMultiplier(); let gain = 1 * m;
-        game.new += gain; game.totalNew += gain; addExp(gain * 0.05);
-        const f = document.createElement('div'); f.className = 'floating-text'; f.innerText = `+${format(gain)}`;
-        f.style.left = e.clientX + 'px'; f.style.top = e.clientY + 'px';
-        document.body.appendChild(f); setTimeout(() => f.remove(), 800);
-        updateUI();
-    };
-
-    function addExp(amount) {
-        game.exp += amount; game.totalExp += amount;
-        while (game.exp >= game.nextExp) { game.exp -= game.nextExp; game.level++; game.nextExp *= 1.5; }
+    function toggleChat() {
+        chat.isOpen = !chat.isOpen;
+        document.getElementById('chat-container').style.height = chat.isOpen ? '280px' : '40px';
     }
 
-    function activateBoost(e) { if(e) e.stopPropagation(); game.boostActive = true; game.boostTimeLeft = 15; updateUI(); }
-
-    setInterval(() => {
-        const now = Date.now();
-        const dt = (now - lastTick) / 1000;
-        lastTick = now;
-        let m = getMultiplier(); 
-        let gain = game.autoNew * m * dt;
-        if (gain > 0) { game.new += gain; game.totalNew += gain; addExp(gain * 0.01); }
-        if (game.stakedNews > 0) game.unclaimedNews += (game.stakedNews * 0.00001 * dt);
-        if (game.boostActive) {
-            game.boostTimeLeft -= dt;
-            if (game.boostTimeLeft <= 0) { game.boostActive = false; game.clickCount = 0; game.boostCooldown = 600; }
-        } else if (game.clickCount > 0) { 
-            game.clickCount = Math.max(0, game.clickCount - (2 * dt)); 
-        }
-        if (game.boostCooldown > 0) game.boostCooldown = Math.max(0, game.boostCooldown - dt);
-        updateUI();
-    }, 100);
-
-    setInterval(saveCloud, 15000);
     window.onload = loadCloud;
-    document.getElementById('chat-input').onkeypress = (e) => { if (e.key === 'Enter') handleInput(); };
+    setInterval(saveCloud, 30000);
 </script>
 </body>
 </html>
