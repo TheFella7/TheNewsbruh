@@ -519,9 +519,17 @@
             div.innerHTML = `<div style="padding:10px; border:1px solid var(--neon)"><input id="name-in" value="${game.playerName}" maxlength="12" style="background:#000; color:var(--neon); border:1px solid var(--neon); padding:8px; margin-bottom:15px; width:100%"><div class="full-stat-line"><span>Current Multiplier:</span> <b>${format(game.bruh+1)}x</b></div><button class="btn-action" onclick="game.playerName=document.getElementById('name-in').value; saveCloud()">UPDATE PROFILE</button></div>`;
         } else if (cmd === '!rank') {
             div.innerHTML = 'Loading Leaderboard...';
-            sb.from('saves').select('game_data').order('game_data->totalExp', { ascending: false }).limit(10).then(({data}) => {
-                let html = '<table class="rank-table"><tr><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
-                if(data) data.forEach(d => { let p = d.game_data; html += `<tr><td>${p.playerName || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; });
+            sb.from('saves')
+              .select('game_data')
+              .order('game_data->bruh', { ascending: false })
+              .order('game_data->level', { ascending: false })
+              .limit(10)
+              .then(({data}) => {
+                let html = '<table class="rank-table"><tr><th>#</th><th>NAME</th><th>BRUH</th><th>LVL</th></tr>';
+                if(data) data.forEach((d, index) => { 
+                    let p = d.game_data; 
+                    html += `<tr><td>${index+1}</td><td>${p.playerName || "Anonymous"}</td><td>${format(p.bruh || 0)}</td><td>${format(p.level || 1)}</td></tr>`; 
+                });
                 div.innerHTML = html + '</table>';
             });
         } else if (cmd === '!premium') {
