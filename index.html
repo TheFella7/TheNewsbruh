@@ -438,15 +438,46 @@
         input.value = '';
     }
 
+    function getUpgradeNextCost(u) { return Math.floor(u.baseCost * Math.pow(1.15, u.count)); }
+
+    function getAffordableUpgradeCount(u) {
+        let b = game.new; let r = 1.15; let c = getUpgradeNextCost(u);
+        if (b < c) return 0;
+        let n = Math.floor(Math.log(1 - (b * (1 - r) / c)) / Math.log(r));
+        return Math.max(0, n);
+    }
+
+    function buyMaxUpgrades(uId) {
+        const u = game.upgrades.find(x => x.id === uId);
+        let n = getAffordableUpgradeCount(u);
+        if (n > 0) { 
+            let r = 1.15; let c = getUpgradeNextCost(u);
+            let totalCost = c * (1 - Math.pow(r, n)) / (1 - r);
+            game.new -= totalCost; 
+            u.count += n; 
+            game.autoNew += (u.power * n); 
+            updateUI(); 
+        }
+    }
+
     function renderTab(cmd) {
         const div = document.getElementById('tab-content');
         if (cmd === '!upgrades') {
             div.innerHTML = '';
             game.upgrades.forEach(u => {
-                let cost = Math.floor(u.baseCost * Math.pow(1.15, u.count));
+                let cost = getUpgradeNextCost(u);
+                let maxAff = getAffordableUpgradeCount(u);
                 let row = document.createElement('div');
                 row.className = 'upgrade-row';
-                row.innerHTML = `<div class="upgrade-info"><span><b>${u.name}</b> (Lv.${format(u.count)})</span><span>+${format(u.power)}/s</span></div><div class="upgrade-btns"><button class="btn-upgrade" ${game.new < cost ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button></div>`;
+                row.innerHTML = `
+                    <div class="upgrade-info">
+                        <span><b>${u.name}</b> (Lv.${format(u.count)})</span>
+                        <span>+${format(u.power)}/s</span>
+                    </div>
+                    <div class="upgrade-btns">
+                        <button class="btn-upgrade" ${game.new < cost ? 'disabled' : ''} onclick="buyUpgrade(${u.id})">+1: ${format(cost)}</button>
+                        <button class="btn-upgrade" ${maxAff < 1 ? 'disabled' : ''} onclick="buyMaxUpgrades(${u.id})">MAX (${maxAff})</button>
+                    </div>`;
                 div.appendChild(row);
             });
         } else if (cmd === '!stake') {
@@ -493,7 +524,7 @@
 
     function updateName() { let n = document.getElementById('name-in').value.trim(); if(n) { game.playerName = n; saveCloud(); alert('Name updated!'); } }
     function buyUpgrade(id) {
-        const u = game.upgrades.find(x => x.id === id); const cost = Math.floor(u.baseCost * Math.pow(1.15, u.count));
+        const u = game.upgrades.find(x => x.id === id); const cost = getUpgradeNextCost(u);
         if (game.new >= cost) { game.new -= cost; u.count++; game.autoNew += u.power; updateUI(); }
     }
     function buyAllBruh() {
