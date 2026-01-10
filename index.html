@@ -14,6 +14,7 @@
             --neon-dim: #1a5e0b;
             --old-english: 'UnifrakturMaguntia', serif;
             --mono: 'Courier Prime', monospace;
+            --error: #ff3939;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
@@ -31,17 +32,17 @@
         }
 
         /* Modal / Popups */
-        #how-to-play-overlay, #offline-overlay {
+        #how-to-play-overlay, #offline-overlay, #auth-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 2000;
             display: none; align-items: center; justify-content: center;
         }
-        #how-to-play-box, #offline-box {
+        #how-to-play-box, #offline-box, #auth-box {
             width: 90%; max-width: 450px; background: #000; border: 2px solid var(--neon);
             padding: 25px; position: relative; box-shadow: 0 0 30px var(--neon-dim);
             max-height: 85vh; overflow-y: auto; text-align: center;
         }
-        #close-htp, #close-offline {
+        #close-htp, #close-offline, #close-auth {
             position: absolute; top: 10px; right: 15px; font-size: 1.8rem;
             cursor: pointer; font-weight: bold; color: var(--neon); text-shadow: 0 0 10px var(--neon);
         }
@@ -53,6 +54,18 @@
         .cmd-list { list-style: none; }
         .cmd-list li { margin-bottom: 10px; padding-left: 10px; border-left: 1px solid var(--neon-dim); }
         .cmd-list code { color: var(--neon); font-weight: bold; font-size: 0.85rem; }
+
+        /* Auth Specific Styles */
+        .auth-input {
+            width: 100%; background: #000; border: 1px solid var(--neon);
+            color: var(--neon); padding: 10px; margin-bottom: 10px;
+            font-family: var(--mono); text-align: center; outline: none;
+        }
+        .auth-tabs { display: flex; justify-content: center; margin-bottom: 15px; gap: 10px; }
+        .auth-tab { cursor: pointer; opacity: 0.5; border-bottom: 1px solid transparent; }
+        .auth-tab.active { opacity: 1; border-bottom: 1px solid var(--neon); font-weight: bold; }
+        #auth-error { color: var(--error); font-size: 0.7rem; margin-top: 10px; min-height: 15px; text-shadow: none; }
+        .auth-status { font-size: 0.6rem; color: var(--neon); border: 1px solid var(--neon); padding: 3px 6px; cursor: pointer; margin-right: 5px;}
 
         #save-status {
             position: absolute; top: 10px; right: 10px; font-size: 0.6rem;
@@ -164,6 +177,31 @@
                 <li><code>!stats</code> - Lifetime progress and Alias change.</li>
                 <li><code>!close</code> - Return to stack.</li>
             </ul>
+            <div style="margin-top:20px;">
+                <button class="btn-action" onclick="document.getElementById('how-to-play-overlay').style.display='none'">INITIALIZE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="auth-overlay">
+    <div id="auth-box">
+        <div id="close-auth" onclick="document.getElementById('auth-overlay').style.display='none'">X</div>
+        <div class="htp-header">IDENTITY</div>
+        <div class="htp-sub">SECURE LOGIN</div>
+        
+        <div class="auth-tabs">
+            <div class="auth-tab active" id="tab-login" onclick="switchAuthMode('login')">LOGIN</div>
+            <div class="auth-tab" id="tab-register" onclick="switchAuthMode('register')">REGISTER</div>
+        </div>
+
+        <div id="auth-form">
+            <input type="email" id="auth-email" class="auth-input" placeholder="EMAIL ADDRESS">
+            <input type="password" id="auth-pass" class="auth-input" placeholder="PASSWORD">
+            <p style="font-size:0.6rem; color:#aaa; margin-bottom:10px;" id="auth-note"></p>
+            <div id="auth-error"></div>
+            <button class="btn-action" id="auth-submit" onclick="handleAuthSubmit()">ACCESS MAINFRAME</button>
+            <button class="btn-action" id="auth-logout" style="display:none; background:#ff3939; color:#fff;" onclick="handleLogout()">DISCONNECT SESSION</button>
         </div>
     </div>
 </div>
@@ -187,7 +225,10 @@
 
 <div id="header">
     <div class="header-top-row">
-        <div class="global-msg-count">MSG SENT: <span id="msg-total-val">0</span></div>
+        <div style="display:flex; align-items:center;">
+             <div class="auth-status" id="auth-status-btn" onclick="openAuth()">[ ANONYMOUS ]</div>
+             <div class="global-msg-count">MSG: <span id="msg-total-val">0</span></div>
+        </div>
         <div class="chat-indicator" onclick="toggleChat()">
             ✉️ <span class="chat-badge hidden" id="unread-count">0</span>
         </div>
@@ -249,6 +290,7 @@
 
     let playerUUID = localStorage.getItem('bruh_uid') || crypto.randomUUID();
     localStorage.setItem('bruh_uid', playerUUID);
+    let sessionUser = null;
 
     let game = {
         playerName: "Anonymous", new: 0, totalNew: 0, bruh: 0,
@@ -268,6 +310,110 @@
     let chat = { messages: [], unreadCount: 0, isOpen: true, currentTab: null };
     let boostAnimInterval = null;
     let lastTick = Date.now();
+    let authMode = 'login'; // login or register
+
+    // --- AUTH LOGIC START ---
+    function openAuth() {
+        document.getElementById('auth-overlay').style.display = 'flex';
+        checkAuthUI();
+    }
+
+    function switchAuthMode(mode) {
+        authMode = mode;
+        document.getElementById('tab-login').className = mode === 'login' ? 'auth-tab active' : 'auth-tab';
+        document.getElementById('tab-register').className = mode === 'register' ? 'auth-tab active' : 'auth-tab';
+        document.getElementById('auth-submit').innerText = mode === 'login' ? 'ACCESS MAINFRAME' : 'CREATE IDENTITY';
+        document.getElementById('auth-note').innerText = mode === 'register' ? 'NOTE: SAVING REGISTERS CURRENT PROGRESS.' : '';
+        document.getElementById('auth-error').innerText = '';
+    }
+
+    function checkAuthUI() {
+        if(sessionUser) {
+            document.getElementById('auth-form').style.display = 'none';
+            document.getElementById('auth-logout').style.display = 'block';
+            document.querySelector('.htp-sub').innerText = "LOGGED IN AS: " + sessionUser.email.toUpperCase();
+            document.getElementById('auth-status-btn').innerText = "[ AUTHENTICATED ]";
+            document.getElementById('auth-status-btn').style.borderColor = "var(--neon)";
+        } else {
+            document.getElementById('auth-form').style.display = 'block';
+            document.getElementById('auth-logout').style.display = 'none';
+            document.querySelector('.htp-sub').innerText = "SECURE LOGIN";
+            document.getElementById('auth-status-btn').innerText = "[ ANONYMOUS ]";
+            document.getElementById('auth-status-btn').style.borderColor = "#888";
+        }
+    }
+
+    async function handleAuthSubmit() {
+        const email = document.getElementById('auth-email').value;
+        const pass = document.getElementById('auth-pass').value;
+        const errDiv = document.getElementById('auth-error');
+        errDiv.innerText = "Processing...";
+        
+        if (!email || !pass) { errDiv.innerText = "Credentials missing."; return; }
+
+        if (authMode === 'register') {
+            // REGISTER LOGIC WITH SAVE MIGRATION
+            const { data, error } = await sb.auth.signUp({ email, password: pass });
+            if (error) { errDiv.innerText = error.message; return; }
+            if (data.user) {
+                // MIGRATION: IMPORTANT
+                const newID = data.user.id;
+                const oldID = playerUUID;
+                
+                // Save current local progress to the *new* ID immediately in DB
+                // We basically transfer ownership of the current row if it exists, or create new
+                
+                // 1. Try to fetch existing anonymous save
+                const { data: oldSave } = await sb.from('saves').select('*').eq('user_uuid', oldID).single();
+                
+                if (oldSave) {
+                    // Update the row to the new User ID
+                    await sb.from('saves').update({ user_uuid: newID }).eq('user_uuid', oldID);
+                } else {
+                    // If no cloud save existed yet, create one now with current local game
+                    await sb.from('saves').upsert({ user_uuid: newID, game_data: game, updated_at: new Date() });
+                }
+
+                // Update Local Context
+                playerUUID = newID;
+                localStorage.setItem('bruh_uid', newID);
+                sessionUser = data.user;
+                
+                errDiv.innerText = "Identity Created. Progress Saved.";
+                setTimeout(() => document.getElementById('auth-overlay').style.display = 'none', 1500);
+                checkAuthUI();
+            } else {
+                errDiv.innerText = "Check email for confirmation.";
+            }
+        } else {
+            // LOGIN LOGIC
+            const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+            if (error) { errDiv.innerText = error.message; return; }
+            if (data.user) {
+                sessionUser = data.user;
+                playerUUID = data.user.id;
+                localStorage.setItem('bruh_uid', playerUUID);
+                
+                errDiv.innerText = "Access Granted. Syncing...";
+                // Load the Cloud Save for this user
+                await loadCloud(); 
+                
+                setTimeout(() => document.getElementById('auth-overlay').style.display = 'none', 1000);
+                checkAuthUI();
+            }
+        }
+    }
+
+    async function handleLogout() {
+        await sb.auth.signOut();
+        sessionUser = null;
+        // Generate new Anonymous ID
+        playerUUID = crypto.randomUUID();
+        localStorage.setItem('bruh_uid', playerUUID);
+        // Reset Game locally (Visual only, ideally reload page)
+        location.reload(); 
+    }
+    // --- AUTH LOGIC END ---
 
     // Security: Prevent XSS
     function escapeHtml(text) {
@@ -531,7 +677,7 @@
 
     async function restorePurchases() {
         await loadCloud();
-        alert('Cloud save synced. If your Player ID is correct, purchases are restored.');
+        alert('Cloud save synced. Purchases are restored based on your ID.');
         updateUI();
     }
 
@@ -733,7 +879,25 @@
     }, 100);
 
     setInterval(saveCloud, 15000);
-    window.onload = loadCloud;
+    
+    // Check initial session
+    window.onload = async () => {
+        // Try to get existing session
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            sessionUser = session.user;
+            playerUUID = session.user.id;
+            localStorage.setItem('bruh_uid', playerUUID);
+        } else {
+            // Ensure anonymous ID exists
+            playerUUID = localStorage.getItem('bruh_uid') || crypto.randomUUID();
+            localStorage.setItem('bruh_uid', playerUUID);
+        }
+        
+        checkAuthUI();
+        loadCloud();
+    };
+    
     document.getElementById('chat-input').onkeypress = (e) => { if (e.key === 'Enter') handleInput(); };
 </script>
 </body>
