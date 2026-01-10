@@ -208,13 +208,21 @@
                 <span class="wallet-icon">🔵</span>
                 <span class="wallet-name">COINBASE</span>
             </div>
+            <div class="wallet-option" onclick="connectAndPay('rabby')">
+                <span class="wallet-icon">🐰</span>
+                <span class="wallet-name">RABBY</span>
+            </div>
+            <div class="wallet-option" onclick="connectAndPay('trust')">
+                <span class="wallet-icon">🛡️</span>
+                <span class="wallet-name">TRUST WALLET</span>
+            </div>
+            <div class="wallet-option" onclick="connectAndPay('okx')">
+                <span class="wallet-icon">⚫</span>
+                <span class="wallet-name">OKX WALLET</span>
+            </div>
             <div class="wallet-option" onclick="connectAndPay('injected')">
                 <span class="wallet-icon">🔌</span>
                 <span class="wallet-name">BROWSER/OTHER</span>
-            </div>
-             <div class="wallet-option" onclick="connectAndPay('rabby')">
-                <span class="wallet-icon">🐰</span>
-                <span class="wallet-name">RABBY</span>
             </div>
         </div>
         <p style="font-size: 0.6rem; margin-top: 20px; color: #888;">Network: Polygon (MATIC/POL)</p>
@@ -572,23 +580,40 @@
     async function connectAndPay(type) {
         document.getElementById('wallet-modal-overlay').style.display = 'none';
         let providerObj = null;
+        let walletName = "Wallet";
 
         if (type === 'metamask') {
-            if (window.ethereum && window.ethereum.isMetaMask) providerObj = window.ethereum;
-            else if (window.ethereum && !window.ethereum.isCoinbaseWallet) providerObj = window.ethereum; // Fallback
+            walletName = "MetaMask";
+            // Specific check for MetaMask (avoids conflict with others that inject into window.ethereum)
+            if (window.ethereum && window.ethereum.isMetaMask && !window.ethereum.isRabby) providerObj = window.ethereum;
+            else if (window.ethereum) providerObj = window.ethereum; // Fallback
             else return alert("MetaMask not detected. Please install it.");
         } 
         else if (type === 'coinbase') {
+            walletName = "Coinbase Wallet";
             if (window.coinbaseWalletExtension) providerObj = window.coinbaseWalletExtension;
             else if (window.ethereum && window.ethereum.isCoinbaseWallet) providerObj = window.ethereum;
             else return alert("Coinbase Wallet not detected.");
         }
         else if (type === 'rabby') {
+             walletName = "Rabby";
              if (window.ethereum && window.ethereum.isRabby) providerObj = window.ethereum;
              else return alert("Rabby not detected.");
         }
+        else if (type === 'trust') {
+            walletName = "Trust Wallet";
+            if (window.trustwallet) providerObj = window.trustwallet;
+            else if (window.ethereum && window.ethereum.isTrust) providerObj = window.ethereum;
+            else return alert("Trust Wallet not detected.");
+        }
+        else if (type === 'okx') {
+            walletName = "OKX Wallet";
+            if (window.okxwallet) providerObj = window.okxwallet;
+            else return alert("OKX Wallet not detected.");
+        }
         else {
             // Injected/Browser generic
+            walletName = "Browser Wallet";
             if (window.ethereum) providerObj = window.ethereum;
             else return alert("No crypto wallet detected.");
         }
